@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameMonsterJS3D — стек для 3D-игры одной командой</title>
+  <meta name="description" content="npm create gamemonsterjs3d — 3D-игра на Vite, Three.js, React Three Fiber, Drei, Rapier, Howler.js и zustand.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237c3aed'/><stop offset='.55' stop-color='%23ec4899'/><stop offset='1' stop-color='%23f59e0b'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/></svg>">
+  <script>
+    // Theme before the first paint: saved choice, otherwise the system setting
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('gm-theme'); } catch (e) { /* storage blocked */ }
+      document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --c1: #8b5cf6; --c2: #ec4899; --c3: #f59e0b;
+      --bg: #faf8ff; --surface: #ffffff; --text: #1b1530; --muted: #5f5878;
+      --line: rgba(27, 21, 48, 0.1); --term: #17122a;
+      --grad: linear-gradient(90deg, var(--c1), var(--c2), var(--c3));
+      color-scheme: light;
+    }
+    :root[data-theme="dark"] {
+      --bg: #08060f; --surface: #151027; --text: #f3effd; --muted: #a69fc2;
+      --line: rgba(243, 239, 253, 0.1); --term: #0d0a18;
+      color-scheme: dark;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; display: grid; place-items: center; font: 400 14px/1.5 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); }
+    a { color: var(--c1); }
+    main { width: min(980px, 100% - 32px); padding: 20px 0; }
+    .top { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+    .logo b { width: 24px; height: 24px; border-radius: 7px; background: var(--grad); }
+    .top .end { margin-left: auto; display: flex; gap: 6px; }
+    .btn { display: grid; place-items: center; height: 30px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: 600 13px/1 Inter, sans-serif; text-decoration: none; cursor: pointer; }
+    h1 { font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 6px; }
+    .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { color: var(--muted); margin: 0 0 18px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px; }
+    ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; }
+    li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 4px 10px; min-width: 0; }
+    li::before { content: counter(s); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--grad); color: #fff; font-weight: 700; font-size: 13px; }
+    li b { font-weight: 600; }
+    .cmd { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 4px 4px 4px 12px; border-radius: 9px; background: var(--term); color: #f3effd; }
+    .cmd code { flex: 1; min-width: 0; font: 12.5px/1.5 'JetBrains Mono', monospace; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .cmd button { flex: none; padding: 6px 10px; border: 0; border-radius: 6px; background: #fff; color: #17122a; font: 600 12px/1 Inter, sans-serif; cursor: pointer; }
+    .note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+    code { font: 12.5px 'JetBrains Mono', monospace; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td:first-child { width: 128px; font-weight: 600; padding-right: 8px; }
+    td:last-child { color: var(--muted); }
+    table + h2 { margin-top: 16px; }
+    footer { margin-top: 20px; color: var(--muted); font-size: 12.5px; }
+    @media (max-width: 760px) { .cols { grid-template-columns: 1fr; gap: 20px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <span class="logo"><b></b>GameMonsterJS3D</span>
+      <div class="end">
+        <a class="btn" href="https://github.com/si0683/GameMonsterJS3D">GitHub</a>
+        <button class="btn theme" type="button" aria-label="Сменить тему">◐</button>
+      </div>
+    </div>
+
+    <h1>Стек для 3D-игры <span class="grad">одной командой</span></h1>
+    <p class="lead">Vite + Three.js + React Three Fiber + Drei + Rapier — команда создаёт папку с игрой и сама ставит все пакеты. Внутри готовый уровень с физикой.</p>
+
+    <div class="cols">
+      <div>
+        <h2>Как начать</h2>
+        <ol>
+          <li><b>Установите <a href="https://nodejs.org">Node.js</a> 20.19+</b><span class="note" style="margin:0">Проверить: <code>node -v</code></span></li>
+          <li><b>Создайте проект</b><div class="cmd"><code>npm create gamemonsterjs3d@latest my-game</code><button type="button" data-copy>Копировать</button></div></li>
+          <li><b>Запустите</b><div class="cmd"><code>cd my-game &amp;&amp; npm run dev</code><button type="button" data-copy>Копировать</button></div></li>
+        </ol>
+        <p class="note">Откроется на <code>http://localhost:5173</code>. Пока пакета нет в npm, вместо шага 2: <code>npx github:si0683/GameMonsterJS3D my-game</code></p>
+      </div>
+      <div>
+        <h2>Что установится</h2>
+        <table>
+        <tr><td>Three.js</td><td>3D: сцены, модели glTF, свет, материалы</td></tr>
+        <tr><td>React Three Fiber</td><td>React-слой над Three.js</td></tr>
+        <tr><td>Drei</td><td>модели, управление, камеры, окружения, эффекты</td></tr>
+        <tr><td>Rapier</td><td>3D-физика и коллизии</td></tr>
+        <tr><td>Howler.js</td><td>звук и музыка</td></tr>
+        <tr><td>zustand</td><td>состояние игры</td></tr>
+        <tr><td>Vite, TypeScript</td><td>сборка и типы</td></tr>
+        </table>
+        <h2>Команды</h2>
+        <table>
+        <tr><td><code>npm run dev</code></td><td>разработка</td></tr>
+        <tr><td><code>npm run build</code></td><td>готовая игра в <code>dist/</code></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <footer>MIT · <a href="https://github.com/si0683/GameMonsterJS3D#readme">README</a> · 2D: <a href="https://si0683.github.io/GameMonsterJS2D/">GameMonsterJS2D</a></footer>
+  </main>
+
+  <script>
+    document.querySelector('.theme').addEventListener('click', function () {
+      var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = t;
+      try { localStorage.setItem('gm-theme', t); } catch (e) { /* storage blocked */ }
+    });
+    document.querySelectorAll('[data-copy]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        navigator.clipboard.writeText(btn.previousElementSibling.textContent).then(function () {
+          btn.textContent = 'Готово';
+          setTimeout(function () { btn.textContent = 'Копировать'; }, 1500);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

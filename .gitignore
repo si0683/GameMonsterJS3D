@@ -1,0 +1,5 @@
+_test/
+node_modules/
+dist/
+template/package-lock.json
+*.tgz
