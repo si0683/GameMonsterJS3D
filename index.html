@@ -9,9 +9,8 @@
   <script>
     // Theme before the first paint: saved choice, otherwise the system setting
     (function () {
-      var t = null;
-      try { t = localStorage.getItem('gm-theme'); } catch (e) { /* storage blocked */ }
-      document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      // the hallway is always dark, so is the page
+      document.documentElement.dataset.theme = 'dark';
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +20,7 @@
     /* Dark and colourless: soot, ash and bone — the only colour on the page is the monster's crack */
     :root {
       --c1: #2b2925; --glow: #2b2925; --moss: #6b675e; --bone: #c9c4b6;
-      --bg: #0a0a0a; --surface: #d6d2c7; --text: #141414; --muted: #55524b;
+      --bg: #0a0a0a; --surface: #0c0c0c; --text: #e4e0d6; --muted: #85827a;
       --line: rgba(20, 20, 20, 0.16); --term: #141414; --term-text: #e4e0d6;
       --grad: none;
       color-scheme: light;
@@ -72,12 +71,13 @@
     .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.85)); }
     main {
       position: relative; padding: 16px 20px; border-radius: 16px; border: 1px solid var(--line);
-      background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background: rgba(8, 8, 8, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
     }
     /* no room beside the panel: it turns into dark glass and the monster shows through */
     @media (max-width: 1099px) {
-      main { background: color-mix(in srgb, var(--surface) 72%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+      main { background: rgba(8, 8, 8, 0.42); }
     }
     /* ---------- the panel in the style of the hallway ---------- */
     main {
@@ -106,12 +106,11 @@
     li::before {
       background: transparent; color: var(--muted); border: 1px solid var(--line);
     }
-    .cmd { background: var(--term); color: var(--term-text); border: 1px solid var(--line); border-radius: 6px; }
+    .cmd { background: rgba(0, 0, 0, 0.55); color: var(--term-text); border: 1px solid var(--line); border-radius: 6px; }
     .cmd code::before { content: "› "; color: var(--muted); }
     .cmd button { background: var(--bone); color: #151918; transition: background 0.15s, box-shadow 0.15s; }
     .cmd button:hover { background: #ece8de; }
     .btn { background: color-mix(in srgb, var(--term) 55%, transparent); color: var(--text); border-color: var(--line); }
-    :root:not([data-theme="dark"]) .btn { background: rgba(255, 255, 255, 0.4); }
     td { border-bottom-color: var(--line); }
     td:first-child a { text-decoration-color: var(--moss); }
     td:first-child a:hover { color: var(--glow); }
@@ -140,7 +139,6 @@
         <button class="btn sound" type="button" aria-label="Звук" aria-pressed="true" title="Звук">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path class="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg>
         </button>
-        <button class="btn theme" type="button" aria-label="Сменить тему">◐</button>
       </div>
     </div>
 
@@ -188,11 +186,6 @@
     })
   </script>
   <script>
-    document.querySelector('.theme').addEventListener('click', function () {
-      var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = t;
-      try { localStorage.setItem('gm-theme', t); } catch (e) { /* storage blocked */ }
-    });
     document.querySelectorAll('[data-copy]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         navigator.clipboard.writeText(btn.previousElementSibling.textContent).then(function () {

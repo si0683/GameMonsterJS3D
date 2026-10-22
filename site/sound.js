@@ -1,7 +1,11 @@
 // Sound of the landing page: the ambient track in a loop and effects made right in the browser
 // with Web Audio — the flashlight's click, the lamp's crackle and her scream. It moves in silence.
-// Browsers allow sound only after a click or a key press, so it starts on the first one
+// Browsers allow sound only after a click, a tap or a key press, so it starts on the first one
 // (unless the visitor turned it off: the choice is kept in localStorage).
+//
+// Phones: the AudioContext is created and resumed right inside the tap (iOS ignores it later),
+// and the track plays through an <audio> element — on iPhone that also keeps the sound on when
+// the ring/silent switch is set to silent, which mutes plain Web Audio.
 
 const KEY = "gm-sound"
 const TRACK = "site/ambient.mp3"
@@ -10,7 +14,7 @@ let ctx = null
 let master = null // everything → master → compressor → speakers
 let music = null // the track's gain (ducked during the scare)
 let muffle = null // low-pass on the track: the dark sounds closed-in
-let starting = null
+let track = null // <audio> with the ambient loop, routed into the AudioContext
 
 function readPreference() {
   try {
@@ -49,12 +53,15 @@ function noiseSource(at, length) {
   return source
 }
 
-async function start() {
+/** Everything here runs synchronously inside the gesture — no await before resume() and play() */
+function start() {
   if (ctx) {
-    if (ctx.state === "suspended") await ctx.resume()
+    ctx.resume()
+    track.play().catch(() => {})
     return
   }
   ctx = new AudioContext()
+  ctx.resume()
   const compressor = ctx.createDynamicsCompressor()
   compressor.threshold.value = -14
   compressor.ratio.value = 6
@@ -71,13 +78,12 @@ async function start() {
   muffle.connect(music)
   music.connect(master)
 
-  const response = await fetch(TRACK)
-  const buffer = await ctx.decodeAudioData(await response.arrayBuffer())
-  const source = ctx.createBufferSource()
-  source.buffer = buffer
-  source.loop = true
-  source.connect(muffle)
-  source.start()
+  track = new Audio(TRACK)
+  track.loop = true
+  track.preload = "auto"
+  track.setAttribute("playsinline", "")
+  ctx.createMediaElementSource(track).connect(muffle)
+  track.play().catch((error) => console.warn("[sound]", error))
   // fade in, not a jump
   music.gain.setValueAtTime(0.0001, ctx.currentTime)
   music.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 4)
@@ -208,6 +214,11 @@ function scream(at, v = SCREAM) {
 
 const ready = () => enabled && ctx && ctx.state === "running" && music
 
+function stop() {
+  track?.pause()
+  ctx?.suspend()
+}
+
 export const sound = {
   get enabled() {
     return enabled
@@ -215,28 +226,25 @@ export const sound = {
 
   /** "off" before the first gesture, then the AudioContext state; for checks */
   get state() {
-    return ctx ? `${ctx.state}${music ? "+music" : ""}` : "off"
+    return ctx ? `${ctx.state}${track && !track.paused ? "+music" : ""}` : "off"
   },
 
-  /** Turns the sound on or off (button); remembered for the next visit */
-  async setEnabled(on) {
+  /** Turns the sound on or off (the button is a gesture too); remembered for the next visit */
+  setEnabled(on) {
     enabled = on
     try {
       localStorage.setItem(KEY, on ? "on" : "off")
     } catch {
       // storage blocked: the choice lasts until reload
     }
-    if (on) {
-      starting ??= start().catch((error) => console.warn("[sound]", error))
-      await starting
-      await ctx?.resume()
-    } else await ctx?.suspend()
+    if (on) start()
+    else stop()
   },
 
-  /** First click or key press anywhere: start, if the visitor has not turned the sound off */
+  /** A click, tap or key press anywhere: start (or wake up), if the visitor has not turned the sound off */
   unlock() {
-    if (!enabled || starting) return
-    starting = start().catch((error) => console.warn("[sound]", error))
+    if (!enabled) return
+    if (!ctx || ctx.state !== "running" || track.paused) start()
   },
 
   /** Brightness of the scene 0…1: the darker it is, the more muffled the music */
@@ -289,6 +297,7 @@ export const sound = {
     music.gain.exponentialRampToValueAtTime(0.55, at + 5)
 
     scream(at)
+    navigator.vibrate?.([90, 40, 180]) // phones that can: a jolt in the hand
 
     // a low hit under the first moment
     const thump = ctx.createOscillator()
@@ -301,10 +310,13 @@ export const sound = {
   },
 }
 
-// start on the first gesture; stay quiet in hidden tabs
-for (const type of ["pointerdown", "keydown"]) addEventListener(type, () => sound.unlock(), { capture: true })
+// start on the first gesture — on phones a tap counts on touchend/click, not on pointerdown;
+// stay quiet in hidden tabs
+for (const type of ["touchend", "click", "keydown"]) {
+  addEventListener(type, () => sound.unlock(), { capture: true, passive: true })
+}
 document.addEventListener("visibilitychange", () => {
   if (!ctx || !enabled) return
-  if (document.hidden) ctx.suspend()
-  else ctx.resume()
+  if (document.hidden) stop()
+  else start()
 })
