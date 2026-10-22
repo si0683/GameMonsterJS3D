@@ -15,7 +15,8 @@ const panel = document.querySelector("main")
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // ---------- source drawings: crops (px of the SVG) around the subject ----------
-const MONSTER = { src: "site/monster.svg", crop: [228, 34, 398, 1216], height: 2.45 } // 8 ft
+// the soles are trimmed a little: the generator's badge sits right next to the feet
+const MONSTER = { src: "site/ghost.svg", crop: [150, 40, 562, 1186], height: 2.2, face: 0.33 }
 const HALLWAY = { src: "site/hallway.svg", crop: [240, 0, 864, 768], vanishY: 345 / 768 }
 
 // Doors of the hallway drawing, px of the SVG: the jamb the monster hides behind, the floor line,
@@ -80,16 +81,20 @@ const LIGHT = /* glsl */ `
 
 // The body barely moves: shallow breathing, the upper body leaning out of a doorway,
 // the head on the thin neck, long fingers that twitch now and then.
+// Body zones of the drawing, in uv of the crop (u across, vt from the top):
+// the tilted head and its neck, the hips, the hands, the two black eyes.
 const monsterVertex = /* glsl */ `
   uniform float uTime;
   uniform float uHead;   // head tilt, rad
   uniform float uLean;   // upper body lean from the hips, rad
   uniform float uTwitch; // 0…1 finger twitch
+  uniform float uFlip;   // 1: mirrored (the head on the other side)
   uniform vec2 uSize;    // plane width, height (m)
   varying vec2 vUv;
   varying vec3 vWorld;
 
-  vec2 at(float u, float vt) { return vec2((u - 0.5) * uSize.x, (1.0 - vt) * uSize.y); }
+  // a point of the figure → plane coordinates (mirrored when flipped)
+  vec2 at(float u, float vt) { return vec2((mix(u, 1.0 - u, uFlip) - 0.5) * uSize.x, (1.0 - vt) * uSize.y); }
   vec2 rot(vec2 p, vec2 pivot, float a) {
     p -= pivot;
     float c = cos(a), s = sin(a);
@@ -97,23 +102,24 @@ const monsterVertex = /* glsl */ `
   }
 
   void main() {
-    vUv = uv;
-    float u = uv.x, vt = 1.0 - uv.y;
+    vUv = vec2(mix(uv.x, 1.0 - uv.x, uFlip), uv.y);
+    float u = vUv.x, vt = 1.0 - uv.y;
     vec3 p = position;
+    float side = mix(1.0, -1.0, uFlip);
 
     float breath = sin(uTime * 0.9);
-    float torso = smoothstep(0.15, 0.24, vt) * smoothstep(0.55, 0.40, vt) * smoothstep(0.26, 0.10, abs(u - 0.48));
-    p.x += (p.x - at(0.48, 0.0).x) * 0.015 * breath * torso;
+    float torso = smoothstep(0.18, 0.26, vt) * smoothstep(0.55, 0.42, vt) * smoothstep(0.22, 0.08, abs(u - 0.525));
+    p.x += (p.x - at(0.525, 0.0).x) * 0.015 * breath * torso;
 
-    float upper = smoothstep(0.19, 0.26, vt);
-    float fingers = smoothstep(0.70, 0.78, vt) * (smoothstep(0.31, 0.25, u) + smoothstep(0.67, 0.73, u)) * upper;
+    // long fingers twitch now and then
+    float fingers = smoothstep(0.57, 0.64, vt) * (smoothstep(0.26, 0.2, u) + smoothstep(0.76, 0.82, u));
     p.x += 0.01 * uSize.y * sin(uTime * 23.0 + u * 40.0) * fingers * uTwitch;
 
-    // the head first, then the whole upper body leans from the hips
-    float head = smoothstep(0.20, 0.14, vt);
-    p.xy = mix(p.xy, rot(p.xy, at(0.477, 0.165), uHead), head);
+    // the tilted head on its neck, then the whole upper body from the hips
+    float head = smoothstep(0.23, 0.16, vt);
+    p.xy = mix(p.xy, rot(p.xy, at(0.498, 0.181), uHead * side), head);
     float above = smoothstep(0.62, 0.40, vt);
-    p.xy = mix(p.xy, rot(p.xy, at(0.48, 0.5), uLean), above);
+    p.xy = mix(p.xy, rot(p.xy, at(0.525, 0.5), uLean), above);
 
     vec4 world = modelMatrix * vec4(p, 1.0);
     vWorld = world.xyz;
@@ -128,8 +134,14 @@ const monsterFragment = /* glsl */ `
   uniform vec4 uClip;    // visible area in px of the hallway drawing: x0, x1, y0, y1
   uniform vec4 uBack;    // backdrop: width, height, centre y, z
   uniform vec2 uCrop;    // backdrop crop: x offset, width (px)
+  uniform vec2 uPx;      // size of the monster crop in px (for round eyes)
   varying vec2 vUv;
   varying vec3 vWorld;
+
+  float eye(vec2 centre, vec2 uv) {
+    float d = length((uv - centre) * uPx);
+    return smoothstep(9.0, 0.0, d) + 0.35 * smoothstep(22.0, 4.0, d);
+  }
 
   void main() {
     // where this point lands on the hallway drawing, seen from the camera:
@@ -142,17 +154,16 @@ const monsterFragment = /* glsl */ `
 
     vec4 c = texture2D(uMap, vUv);
     if (c.a < 0.03) discard;
-    float vt = 1.0 - vUv.y;
     float luma = dot(c.rgb, vec3(0.299, 0.587, 0.114));
     float light = lighting();
-    // dead grey skin: desaturated and cold
-    vec3 skin = mix(vec3(luma), c.rgb, 0.4) * vec3(0.78, 0.86, 0.84);
+    // dead skin: desaturated and cold
+    vec3 skin = mix(vec3(luma), c.rgb, 0.35) * vec3(0.8, 0.86, 0.88);
     vec3 color = skin * light * mix(0.6, 1.0, uNear);
-    // the crack in the head glows in the dark: you see it before you see him
-    float crack = smoothstep(0.17, 0.10, vt) * smoothstep(0.05, 0.015, abs(vUv.x - 0.477))
-      * smoothstep(0.12, 0.2, luma) * smoothstep(0.42, 0.32, luma);
-    float pulse = 0.5 + 0.5 * sin(uTime * 1.7) * sin(uTime * 0.53 + 1.0);
-    color += crack * (0.35 + 0.65 * pulse) * vec3(0.5, 1.0, 0.28) * 0.9;
+    // two dim pinpoints in the black eye sockets: in the dark you see the eyes first
+    vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
+    float eyes = (eye(vec2(0.359, 0.084), uv) + eye(vec2(0.290, 0.128), uv)) * smoothstep(0.25, 0.08, luma);
+    float pulse = 0.55 + 0.45 * sin(uTime * 1.3) * sin(uTime * 0.41 + 2.0);
+    color += eyes * pulse * vec3(0.78, 0.84, 0.86) * 0.75;
     color += grain() * 0.05;
     gl_FragColor = vec4(color, c.a);
   }
@@ -240,6 +251,8 @@ async function start() {
       uHead: { value: 0 },
       uLean: { value: 0 },
       uTwitch: { value: 0 },
+      uFlip: { value: 0 },
+      uPx: { value: new THREE.Vector2(MONSTER.crop[2], MONSTER.crop[3]) },
       uNear: { value: 1 },
       uSize: { value: new THREE.Vector2(width, height) },
       uClip: { value: NO_CLIP.clone() },
@@ -360,8 +373,9 @@ async function start() {
     left: {
       length: () => between(5, 8),
       enter() {
-        const p = spot(DOORS.left.edge - 30, DOORS.left.floor)
+        const p = spot(DOORS.left.edge - 34, DOORS.left.floor)
         place(p.x, 0, p.z, 0.75)
+        S.uFlip.value = 1
         S.uClip.value.set(DOORS.left.edge, 1e5, -1e5, 1e5)
       },
       update: (k) => (S.uLean.value = -0.36 * ease(k)),
@@ -369,7 +383,7 @@ async function start() {
     right: {
       length: () => between(5, 8),
       enter() {
-        const p = spot(DOORS.right.edge + 30, DOORS.right.floor)
+        const p = spot(DOORS.right.edge + 34, DOORS.right.floor)
         place(p.x, 0, p.z, 0.75)
         S.uClip.value.set(-1e5, DOORS.right.edge, -1e5, 1e5)
       },
@@ -390,7 +404,7 @@ async function start() {
       length: () => 1.7,
       enter() {
         // the face at eye level, filling the view
-        place(camera.position.x, -0.72, -1.35, 1)
+        place(camera.position.x + (0.5 - MONSTER.face) * width, -0.32, -1.25, 1)
         S.uHead.value = 0.12
       },
     },
@@ -402,6 +416,7 @@ async function start() {
     monster.visible = true
     S.uNear.value = near
     S.uLean.value = 0
+    S.uFlip.value = 0
     S.uClip.value.copy(NO_CLIP)
   }
 
@@ -550,8 +565,8 @@ async function start() {
     renderer.render(scene, camera)
   }
 
-  // for checks from the console and the browser tests: window.hero.show("left")
-  window.hero = { show: (name) => enter(name, time.value) }
+  // for checks from the console and the browser tests: window.hero.show("left"), window.hero.where()
+  window.hero = { show: (name) => enter(name, time.value), where: () => monsterPoints()[0] }
 
   if (reduceMotion) {
     // one still frame: it stands in the far doorway
