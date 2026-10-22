@@ -1,6 +1,6 @@
 {
   "name": "create-gamemonsterjs3d",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "3D browser game starter in one command: Vite + Three.js + React Three Fiber + Drei + Rapier physics + Howler.js + zustand + TypeScript, with a playable level, glTF loading and GitHub Pages deploy.",
   "keywords": ["create", "starter", "template", "threejs", "react-three-fiber", "r3f", "drei", "rapier", "vite", "game", "3d", "webgl"],
   "homepage": "https://si0683.github.io/GameMonsterJS3D/",

@@ -2,7 +2,7 @@
 
 3D browser game on **Vite + React 19 + Three.js + React Three Fiber 9 + Drei 10 + React Three Rapier 2 + Howler.js + zustand + TypeScript**. Created with `npm create gamemonsterjs3d`.
 
-If `PROMT.md` is filled in, it is the user's game design document: follow its «Промт» section (plan and questions first, then stages), while the rules below stay in force. An unfilled template (only `«…»` placeholders) is not a task.
+`PROMT.md` is the user's game design document; the whole file is the prompt. When the user asks to build from it, follow it: plan and questions first (including every unfilled `«…»` field), then stages; the rules below stay in force.
 
 ## Structure
 

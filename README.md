@@ -29,7 +29,7 @@ Plus a playable level (rolling ball, jump, ramp, boxes to knock over, coins, tim
 
 ## Build it with AI
 
-[PROMT.md](https://raw.githubusercontent.com/si0683/GameMonsterJS3D/main/PROMT.md) is a fill-in brief for AI assistants (Claude Code, Cursor, Codex…): describe your 3D game — genre, controls, mechanics, levels, art — then tell the assistant in the project folder: *"Read PROMT.md and AGENTS.md and build the game from the «Промт» section. Start with a plan and questions."* The file is also copied into every new project. (The brief is in Russian.)
+[PROMT.md](https://raw.githubusercontent.com/si0683/GameMonsterJS3D/main/PROMT.md) is a fill-in brief for AI assistants (Claude Code, Cursor, Codex…): describe your 3D game — genre, controls, mechanics, levels, art — then tell the assistant in the project folder: *"Read PROMT.md and build the project from it."* The whole file is the prompt, so it can also be copied (Ctrl+A) into any AI chat; unfilled fields are fine, the AI asks about them. The file is also copied into every new project. (The brief is in Russian.)
 
 ## Developing this repository
 
