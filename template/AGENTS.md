@@ -26,6 +26,7 @@
 - Asset URLs start with `import.meta.env.BASE_URL` (`base: "./"`), so the build works on GitHub Pages.
 - In dev mode `window.useGame` (store) and `window.player` (Rapier body of the ball) are available for testing from the console.
 - Known harmless console warnings from the libraries: `THREE.Clock … deprecated` (R3F) and `using deprecated parameters for the initialization function` (Rapier).
+- Platform: game code never calls a portal SDK directly — only `platform` from `src/platform` (`init`, `ready` after loading, `gameplayStart`/`gameplayStop` around actual play, `showFullscreenAd` only at logical pauses, `showRewardedAd`, `loadData`/`saveData`, `submitScore`, `lang`, `onPause`/`onResume`). This project uses `none.ts` (localStorage, browser language, no ads). Player texts live in `src/i18n.ts` and follow `platform.lang`. `npm run zip` packs `dist/` into `game.zip` for game portals.
 - Player texts in Russian by default; code comments in English.
 
 ## Check before finishing

@@ -1,9 +1,10 @@
 import { KeyboardControls, Sky, type KeyboardControlsEntry } from "@react-three/drei"
 import { Canvas } from "@react-three/fiber"
 import { Physics } from "@react-three/rapier"
-import { Suspense } from "react"
+import { Suspense, useEffect } from "react"
 
 import { Level } from "./game/Level"
+import { platform } from "./platform"
 import { useGame } from "./store"
 import { Hud } from "./ui/Hud"
 import { Menu } from "./ui/Menu"
@@ -19,9 +20,16 @@ const keyMap: KeyboardControlsEntry<Controls>[] = [
   { name: "jump", keys: ["Space"] },
 ]
 
+// Mounts once Suspense has loaded the physics engine and the models: tell the platform (Yandex: Game Ready)
+function Ready() {
+  useEffect(() => platform.ready(), [])
+  return null
+}
+
 export function App() {
   const phase = useGame((s) => s.phase)
   const run = useGame((s) => s.run)
+  const paused = useGame((s) => s.paused)
 
   return (
     <KeyboardControls map={keyMap}>
@@ -42,9 +50,10 @@ export function App() {
         {/* Suspense waits for the Rapier WebAssembly and the .glb models */}
         <Suspense fallback={null}>
           {/* debug: add the `debug` prop to see the colliders */}
-          <Physics gravity={[0, -9.81, 0]} paused={phase !== "playing"}>
+          <Physics gravity={[0, -9.81, 0]} paused={phase !== "playing" || paused}>
             <Level key={run} />
           </Physics>
+          <Ready />
         </Suspense>
       </Canvas>
       <Hud />

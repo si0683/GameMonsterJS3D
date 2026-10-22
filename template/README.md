@@ -9,6 +9,7 @@
 npm run dev      # игра на http://localhost:5173, правки видны сразу
 npm run build    # готовая игра в папке dist/
 npm run preview  # посмотреть собранную dist/
+npm run zip      # game.zip (index.html в корне) для игровых порталов
 ```
 
 ## Где что лежит
@@ -52,6 +53,12 @@ return <Clone object={scene} />
 Готовый React-компонент из модели: `npx gltfjsx public/models/car.glb --types`.
 
 Посмотреть коллайдеры физики: `<Physics debug>` в `App.tsx`.
+
+## Платформа (SDK)
+
+Код игры не обращается к SDK порталов напрямую — только к `platform` из `src/platform/`: `init`, `ready`, `gameplayStart`/`gameplayStop`, `showFullscreenAd`, `showRewardedAd`, `loadData`/`saveData`, `submitScore`, `lang`, `onPause`/`onResume`.
+
+Проект создан **без SDK** (`src/platform/none.ts`): сохранения в localStorage, язык браузера, реклама не показывается. Версию под Яндекс Игры создают командой `npm create …@latest my-game -- --sdk=yandex`.
 
 ## Выкладка на GitHub Pages
 

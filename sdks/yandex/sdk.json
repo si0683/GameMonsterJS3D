@@ -1,0 +1,10 @@
+{
+  "title": "Яндекс Игры",
+  "description": "Yandex Games SDK: Game Ready, Gameplay API, ads, cloud saves, leaderboard, language",
+  "package": {
+    "scripts": {
+      "yandex": "npm run build && npx -y @yandex-games/sdk-dev-proxy -p dist --dev-mode=true"
+    }
+  },
+  "append": ["AGENTS.md", "README.md", "PROMT.md"]
+}

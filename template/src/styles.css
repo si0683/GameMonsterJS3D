@@ -8,6 +8,10 @@ body,
   font-family: system-ui, sans-serif;
   color: #fff;
   user-select: none;
+  /* Game portals require: no page scroll or pull-to-refresh, no long-tap menu */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 canvas {
@@ -37,6 +41,12 @@ canvas {
   margin: 0 0 24px;
   font-size: 20px;
   opacity: 0.9;
+}
+
+.panel .best {
+  margin-top: -12px;
+  font-size: 16px;
+  opacity: 0.75;
 }
 
 .panel .hint {

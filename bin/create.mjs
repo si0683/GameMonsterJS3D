@@ -6,7 +6,7 @@
 //   npx create-gamemonsterjs3d my-game --no-install --no-git
 
 import { spawnSync } from "node:child_process"
-import { cpSync, existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { appendFileSync, cpSync, existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { basename, join, relative, resolve } from "node:path"
 import { createInterface } from "node:readline/promises"
 import { fileURLToPath } from "node:url"
@@ -19,6 +19,15 @@ const DEV_URL = "http://localhost:5173"
 const TIPS = `Модели .glb кладите в public/models, звуки — в public/sounds`
 
 const TEMPLATE = fileURLToPath(new URL("../template", import.meta.url))
+// Optional platform SDKs: sdks/<name>/ = sdk.json + files/ (copied over the template) + append/ (added to docs)
+const SDKS = fileURLToPath(new URL("../sdks", import.meta.url))
+const sdkList = [
+  { name: "none", title: "без SDK" },
+  ...(existsSync(SDKS) ? readdirSync(SDKS) : []).map((name) => ({
+    name,
+    ...JSON.parse(readFileSync(join(SDKS, name, "sdk.json"), "utf8")),
+  })),
+]
 const SKIP = new Set(["node_modules", "dist", "package-lock.json"])
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"))
 
@@ -30,15 +39,24 @@ const red = color(31)
 const magenta = color(35)
 
 const args = process.argv.slice(2)
-const flags = new Set(args.filter((arg) => arg.startsWith("-")))
-let target = args.find((arg) => !arg.startsWith("-"))
+const flags = new Set()
+let target
+let sdk
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i]
+  if (arg === "--sdk") sdk = args[++i]
+  else if (arg.startsWith("--sdk=")) sdk = arg.slice(6)
+  else if (arg.startsWith("-")) flags.add(arg)
+  else target ??= arg
+}
 
 if (flags.has("-h") || flags.has("--help")) {
   console.log(`
 ${bold(`create-${PACKAGE}`)} ${dim(version)}
 
-  npm create ${PACKAGE}@latest ${dim("[folder]")} ${dim("[-- --no-install --no-git]")}
+  npm create ${PACKAGE}@latest ${dim("[folder]")} ${dim("[-- --sdk=<name> --no-install --no-git]")}
 
+  --sdk=<name>   platform SDK: ${sdkList.map((s) => `${s.name} (${s.title})`).join(", ")}
   --no-install   do not run npm install
   --no-git       do not run git init
 `)
@@ -47,13 +65,23 @@ ${bold(`create-${PACKAGE}`)} ${dim(version)}
 
 console.log(`\n${magenta(bold(NAME))} ${dim(version)} — ${STACK}\n`)
 
-if (!target) {
-  if (process.stdin.isTTY) {
-    const rl = createInterface({ input: process.stdin, output: process.stdout })
-    target = (await rl.question(`Папка проекта ${dim(`(${DEFAULT_DIR})`)}: `)).trim()
-    rl.close()
+if (process.stdin.isTTY && (!target || !sdk)) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  if (!target) target = (await rl.question(`Папка проекта ${dim(`(${DEFAULT_DIR})`)}: `)).trim()
+  if (!sdk && sdkList.length > 1) {
+    console.log("SDK платформы:")
+    sdkList.forEach((s, i) => console.log(`  ${i + 1} — ${s.title}`))
+    const answer = (await rl.question(`Выберите ${dim("(1)")}: `)).trim()
+    sdk = sdkList[Number(answer) - 1]?.name ?? (sdkList.some((s) => s.name === answer) ? answer : undefined)
   }
-  target ||= DEFAULT_DIR
+  rl.close()
+}
+target ||= DEFAULT_DIR
+sdk ||= "none"
+const sdkInfo = sdkList.find((s) => s.name === sdk)
+if (!sdkInfo) {
+  console.error(red(`Неизвестный SDK «${sdk}». Доступны: ${sdkList.map((s) => s.name).join(", ")}`))
+  process.exit(1)
 }
 
 const root = resolve(target)
@@ -72,9 +100,24 @@ renameSync(join(root, "_gitignore"), join(root, ".gitignore"))
 const pkgPath = join(root, "package.json")
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
 pkg.name = toPackageName(basename(root))
+
+if (sdk !== "none") {
+  const dir = join(SDKS, sdk)
+  // Files replace or extend the template (e.g. src/platform/index.ts → the SDK implementation)
+  if (existsSync(join(dir, "files"))) cpSync(join(dir, "files"), root, { recursive: true })
+  // Text added to the end of the docs (AGENTS.md, README.md, PROMT.md)
+  for (const file of sdkInfo.append ?? []) {
+    appendFileSync(join(root, file), readFileSync(join(dir, "append", file), "utf8"))
+  }
+  // Scripts and dependencies of the SDK
+  for (const field of ["scripts", "dependencies", "devDependencies"]) {
+    if (sdkInfo.package?.[field]) pkg[field] = { ...pkg[field], ...sdkInfo.package[field] }
+  }
+}
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n")
 
 console.log(`${green("✔")} Проект создан: ${bold(root)}`)
+console.log(`${green("✔")} SDK: ${sdkInfo.title}`)
 
 const agent = (process.env.npm_config_user_agent ?? "npm").split("/")[0]
 const pm = ["pnpm", "yarn", "bun"].includes(agent) ? agent : "npm"
@@ -95,9 +138,16 @@ console.log(`
 ${bold("Дальше:")}
   cd ${cd.includes(" ") ? `"${cd}"` : cd}${installed ? "" : `\n  ${pm} install`}
   ${pm} run dev          ${dim(`# ${DEV_URL}`)}
+${sdkScripts()}  ${pm} run zip          ${dim("# game.zip для публикации")}
 
 ${TIPS}
 `)
+
+function sdkScripts() {
+  return Object.keys(sdkInfo.package?.scripts ?? {})
+    .map((name) => `  ${pm} run ${name.padEnd(12)} ${dim(`# проверка с SDK «${sdkInfo.title}»`)}\n`)
+    .join("")
+}
 
 function run(command, commandArgs, cwd, quiet = false) {
   const options = { cwd, stdio: quiet ? "ignore" : "inherit" }

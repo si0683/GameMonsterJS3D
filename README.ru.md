@@ -27,6 +27,24 @@ npm run dev
 
 А ещё готовый уровень (катящийся шар, прыжок, рампа, ящики, монеты, таймер, экран победы), модель glTF через `useGLTF`, кнопки для телефона, `AGENTS.md` для нейросетей и выкладка на GitHub Pages.
 
+## SDK платформы
+
+Установщик спрашивает, под какую платформу собирать. Можно указать сразу:
+
+```bash
+npm create gamemonsterjs3d@latest my-game -- --sdk=none     # без SDK — обычная веб-сборка (по умолчанию)
+npm create gamemonsterjs3d@latest my-game -- --sdk=yandex   # SDK Яндекс Игр
+```
+
+Игра обращается к одному интерфейсу — `platform` в `src/platform/`. Через него идут запуск, «игра готова», начало и конец геймплея, реклама (полноэкранная и за награду), сохранения, лидерборд, язык, пауза и продолжение.
+
+- **Без SDK** платформа работает через localStorage и браузер.
+- **С `yandex`** те же вызовы уходят в [SDK Яндекс Игр](https://yandex.ru/dev/games/doc/ru/sdk/sdk-about). Дополнительно появляются:
+  - `npm run yandex` — проверка с настоящим SDK через `@yandex-games/sdk-dev-proxy`;
+  - `YANDEX.md` — публикация и чек-лист модерации.
+
+В любом проекте есть `npm run zip`: он собирает `game.zip` с `index.html` в корне для игровых порталов.
+
 ## Проект через ИИ
 
 [PROMT.md](https://raw.githubusercontent.com/si0683/GameMonsterJS3D/main/PROMT.md) — готовый промт-ТЗ для ИИ-ассистента (Claude Code, Cursor, Codex, ChatGPT…). Весь файл — это промт:

@@ -3,3 +3,4 @@ node_modules/
 dist/
 template/package-lock.json
 *.tgz
+template/game.zip
