@@ -61,9 +61,32 @@
     td:first-child a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--c1) 45%, transparent); text-underline-offset: 3px; transition: color 0.2s, text-decoration-color 0.2s; }
     td:first-child a:hover { color: var(--c1); text-decoration-color: currentColor; }
     footer { margin-top: 8px; color: var(--muted); font-size: 12px; }
+
+    /* Living background (site/hero.js): the hallway and the monster behind a glass panel */
+    html { background: #0f0f0f; }
+    body { background: transparent; }
+    #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
+    #scene.ready { opacity: 1; }
+    .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55)); }
+    main {
+      position: relative; padding: 16px 20px; border-radius: 16px; border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    /* no room beside the panel: it turns into dark glass and the monster shows through */
+    @media (max-width: 1099px) {
+      main { background: color-mix(in srgb, var(--surface) 72%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    }
+    /* wide screens: the panel moves left, the monster gets the right side */
+    @media (min-width: 1100px) {
+      body { justify-items: start; }
+      main { margin-left: clamp(24px, 5vw, 96px); }
+    }
   </style>
 </head>
 <body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
   <main>
     <div class="top">
       <span class="logo"><b></b>GameMonsterJS3D</span>
@@ -99,6 +122,10 @@
     <footer>MIT · <a href="https://github.com/si0683/GameMonsterJS3D#readme">README</a> · 2D: <a href="https://si0683.github.io/GameMonsterJS2D/">GameMonsterJS2D</a></footer>
   </main>
 
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
+  </script>
+  <script type="module" src="site/hero.js"></script>
   <script>
     document.querySelector('.theme').addEventListener('click', function () {
       var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
