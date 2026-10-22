@@ -10,6 +10,8 @@
 
 import * as THREE from "three"
 
+import { sound } from "./sound.js"
+
 const canvas = document.getElementById("scene")
 const panel = document.querySelector("main")
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -438,12 +440,16 @@ async function start() {
     if (name === "scare") shown = 0
     else if (name !== "empty") shown++
     appearances[name].enter?.()
+    // it has moved in the dark: you hear it breathe — or it is right in front of you
+    if (name === "scare") sound.scare()
+    else if (name !== "empty") sound.breath()
   }
 
   // a blackout: short flickers, then darkness long enough to move it
   let burst = null
   let lampAt = between(6, 10)
   let lampFlash = null
+  let lastOn = 1
   function blackout(t) {
     let at = t
     burst = []
@@ -484,7 +490,10 @@ async function start() {
       if (!burst && t > until) blackout(t)
       if (burst) {
         const step = burst.find((s) => t < s.until)
-        if (!step) burst = null
+        if (!step) {
+          burst = null
+          lastOn = 1
+        }
         else {
           if (step.move && !step.done) {
             step.done = true
@@ -492,6 +501,11 @@ async function start() {
             if (current === "scare") burst = null // it is already in front of you
           }
           if (burst) lit = step.on ? 0.9 : 0
+          // the flashlight's switch clicks with every flicker
+          if (step.on !== lastOn) {
+            lastOn = step.on
+            sound.click()
+          }
         }
       }
     }
@@ -500,9 +514,11 @@ async function start() {
     if (t > lampAt) {
       lampAt = t + between(9, 18)
       lampFlash = [t + 0.0, t + 0.07, t + 0.16, t + 0.22]
+      sound.lamp()
     }
     const lampOn = lampFlash && ((t > lampFlash[0] && t < lampFlash[1]) || (t > lampFlash[2] && t < lampFlash[3]))
     ambient.value = current === "scare" ? (lit > 0 ? 0.9 : 0) : lampOn ? 0.55 : 0.025
+    sound.level(power.value + ambient.value)
 
     // where the beam points: the cursor, with a lag and a shaking hand. Left alone, the beam
     // searches the hallway in jerks — always somewhere the monster is not, so it stays in the dark

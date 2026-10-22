@@ -117,6 +117,11 @@
     td:first-child a:hover { color: var(--glow); }
     footer a { color: var(--glow); }
 
+    /* sound button: waves when on, a cross when off */
+    .btn.sound .cross { display: none; }
+    .btn.sound[aria-pressed="false"] .waves { display: none; }
+    .btn.sound[aria-pressed="false"] .cross { display: inline; }
+
     /* wide screens: the panel moves left, the monster gets the right side */
     @media (min-width: 1100px) {
       body { justify-items: start; }
@@ -132,6 +137,9 @@
       <span class="logo"><b></b>GameMonsterJS3D</span>
       <div class="end">
         <a class="btn" href="https://github.com/si0683/GameMonsterJS3D">GitHub</a>
+        <button class="btn sound" type="button" aria-label="Звук" aria-pressed="true" title="Звук">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path class="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg>
+        </button>
         <button class="btn theme" type="button" aria-label="Сменить тему">◐</button>
       </div>
     </div>
@@ -166,6 +174,19 @@
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
   </script>
   <script type="module" src="site/hero.js"></script>
+  <script type="module">
+    import { sound } from "./site/sound.js"
+    const button = document.querySelector(".btn.sound")
+    const show = () => {
+      button.setAttribute("aria-pressed", String(sound.enabled))
+      button.title = sound.enabled ? "Выключить звук" : "Включить звук"
+    }
+    show()
+    button.addEventListener("click", async () => {
+      await sound.setEnabled(!sound.enabled)
+      show()
+    })
+  </script>
   <script>
     document.querySelector('.theme').addEventListener('click', function () {
       var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
