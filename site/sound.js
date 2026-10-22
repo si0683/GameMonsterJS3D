@@ -84,94 +84,126 @@ async function start() {
 }
 
 /**
- * A woman's scream, synthesised: two slightly detuned high voices (~1 kHz) that break and waver,
- * shaped by vowel formants sliding from "a" to "i", roughened by distortion, with breath on top.
+ * A woman's scream, synthesised: short (~0.45 s) and sharp. A voice-like source (harmonics falling
+ * off as in a throat, not a buzzing saw) jumps up in pitch, wobbles and breaks; the formants of an
+ * open "A" shape it, distortion tears it, breath rushes through it, and the hallway echoes it.
  */
-function scream(at) {
-  const length = 1.7
-  const voice = ctx.createGain()
-  voice.gain.setValueAtTime(0.0001, at)
-  voice.gain.exponentialRampToValueAtTime(0.5, at + 0.04)
-  voice.gain.setValueAtTime(0.5, at + 0.9)
-  voice.gain.linearRampToValueAtTime(0.35, at + 1.3)
-  voice.gain.exponentialRampToValueAtTime(0.0001, at + length)
+const SCREAM = {
+  length: 0.45,
+  pitch: [640, 980, 760], // start, held, end (Hz)
+  tilt: 0.8, // how fast the harmonics fall off
+  sub: 0.1, // subharmonic: the voice breaking
+  jitter: 0.06, // pitch wobble, share of the pitch
+  drive: 2.8, // rasp
+  air: 0.6, // breath
+  room: 0.28, // echo of the hallway
+  formants: [
+    [950, 3, 1.3],
+    [1500, 3.5, 1.0],
+    [3100, 4.5, 0.7],
+    [4300, 6, 0.35],
+  ],
+  formantRise: 1.12,
+}
 
-  // vowel formants in parallel: "a" opening into a shrill "i"
-  const formants = [
-    [950, 520, 6, 1.0],
-    [1500, 2600, 7, 0.8],
-    [3000, 3300, 9, 0.5],
-    [4200, 4400, 11, 0.3],
-  ]
+let hallway = null
+function hallwayEcho() {
+  if (hallway) return hallway
+  hallway = ctx.createBuffer(2, ctx.sampleRate * 0.9, ctx.sampleRate)
+  for (let c = 0; c < 2; c++) {
+    const d = hallway.getChannelData(c)
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3.5)
+  }
+  return hallway
+}
+
+function scream(at, v = SCREAM) {
+  const len = v.length
+
+  const n = 40
+  const imag = new Float32Array(n)
+  for (let k = 1; k < n; k++) imag[k] = 1 / Math.pow(k, v.tilt)
+  const throat = ctx.createPeriodicWave(new Float32Array(n), imag)
+
+  // voice → mouth (formants) → rasp → envelope → dry + hallway echo
+  const env = ctx.createGain()
+  env.gain.setValueAtTime(0.0001, at)
+  env.gain.exponentialRampToValueAtTime(1, at + 0.012)
+  env.gain.setValueAtTime(1, at + len * 0.55)
+  env.gain.exponentialRampToValueAtTime(0.35, at + len * 0.8)
+  env.gain.exponentialRampToValueAtTime(0.0001, at + len)
+
+  const rasp = ctx.createWaveShaper()
+  const curve = new Float32Array(2048)
+  for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / 2047) * 2 - 1) * v.drive)
+  rasp.curve = curve
+  rasp.oversample = "4x"
+  rasp.connect(env)
+
   const mouth = ctx.createGain()
-  for (const [from, to, q, level] of formants) {
+  for (const [f, q, level] of v.formants) {
     const band = ctx.createBiquadFilter()
     band.type = "bandpass"
+    band.frequency.setValueAtTime(f, at)
+    band.frequency.linearRampToValueAtTime(f * v.formantRise, at + len)
     band.Q.value = q
-    band.frequency.setValueAtTime(from, at)
-    band.frequency.linearRampToValueAtTime(to, at + 0.7)
     const gain = ctx.createGain()
-    gain.gain.value = level * 2.4
-    mouth.connect(band).connect(gain).connect(voice)
+    gain.gain.value = level
+    mouth.connect(band).connect(gain).connect(rasp)
   }
 
-  // a raw, strained throat
-  const rasp = ctx.createWaveShaper()
-  const curve = new Float32Array(1024)
-  for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / 1023) * 2 - 1) * 3.5)
-  rasp.curve = curve
-  rasp.connect(mouth)
+  // unsteady loudness
+  const shimmer = ctx.createGain()
+  const shake = ctx.createBiquadFilter()
+  shake.type = "lowpass"
+  shake.frequency.value = 70
+  const shakeDepth = ctx.createGain()
+  shakeDepth.gain.value = 0.35
+  noiseSource(at, len).connect(shake).connect(shakeDepth).connect(shimmer.gain)
+  shimmer.connect(mouth)
 
-  // the pitch: a jump up, a wavering hold, a break and a falling end
-  const pitch = [700, 1180, 1080, 1250, 1120, 1300, 980, 760]
-  const times = [0, 0.1, 0.35, 0.55, 0.8, 1.0, 1.35, length]
-  for (const [detune, gainLevel] of [
-    [0, 0.6],
-    [18, 0.45],
+  const [p0, p1, p2] = v.pitch
+  for (const [ratio, level, detune] of [
+    [1, 1, 0],
+    [1, 0.6, 22],
+    [0.5, v.sub, 0],
   ]) {
     const osc = ctx.createOscillator()
-    osc.type = "sawtooth"
+    osc.setPeriodicWave(throat)
     osc.detune.value = detune
-    times.forEach((time, i) =>
-      i === 0
-        ? osc.frequency.setValueAtTime(pitch[0], at)
-        : osc.frequency.exponentialRampToValueAtTime(pitch[i] * (1 + (Math.random() - 0.5) * 0.04), at + time),
-    )
-    // vibrato that gets wilder, plus a nervous flutter
-    const vibrato = ctx.createOscillator()
-    vibrato.frequency.setValueAtTime(5.5, at)
-    vibrato.frequency.linearRampToValueAtTime(8.5, at + length)
-    const depth = ctx.createGain()
-    depth.gain.setValueAtTime(15, at)
-    depth.gain.linearRampToValueAtTime(70, at + length)
-    vibrato.connect(depth).connect(osc.frequency)
-    const flutter = noiseSource(at, length)
-    const flutterLow = ctx.createBiquadFilter()
-    flutterLow.type = "lowpass"
-    flutterLow.frequency.value = 30
-    const flutterDepth = ctx.createGain()
-    flutterDepth.gain.value = 260
-    flutter.connect(flutterLow).connect(flutterDepth).connect(osc.frequency)
-
-    const level = ctx.createGain()
-    level.gain.value = gainLevel
-    osc.connect(level).connect(rasp)
+    osc.frequency.setValueAtTime(p0 * ratio, at)
+    osc.frequency.exponentialRampToValueAtTime(p1 * ratio, at + 0.05)
+    osc.frequency.exponentialRampToValueAtTime(p1 * 1.06 * ratio, at + len * 0.6)
+    osc.frequency.exponentialRampToValueAtTime(p2 * ratio, at + len)
+    const jitter = ctx.createBiquadFilter()
+    jitter.type = "lowpass"
+    jitter.frequency.value = 45
+    const jitterDepth = ctx.createGain()
+    jitterDepth.gain.value = p1 * ratio * v.jitter
+    noiseSource(at, len).connect(jitter).connect(jitterDepth).connect(osc.frequency)
+    const gain = ctx.createGain()
+    gain.gain.value = level
+    osc.connect(gain).connect(shimmer)
     osc.start(at)
-    vibrato.start(at)
-    osc.stop(at + length)
-    vibrato.stop(at + length)
+    osc.stop(at + len)
   }
 
-  // breath rushing through the scream
-  const air = ctx.createBiquadFilter()
-  air.type = "bandpass"
-  air.frequency.value = 2800
-  air.Q.value = 0.8
-  const airLevel = ctx.createGain()
-  airLevel.gain.value = 0.35
-  noiseSource(at, length).connect(air).connect(airLevel).connect(voice)
+  const air = ctx.createGain()
+  air.gain.value = v.air
+  noiseSource(at, len).connect(air).connect(mouth)
 
-  voice.connect(master)
+  const room = ctx.createConvolver()
+  room.buffer = hallwayEcho()
+  const wet = ctx.createGain()
+  wet.gain.value = v.room
+  const dry = ctx.createGain()
+  dry.gain.value = 0.5
+  // the scream is the loudest thing on the page
+  const loud = ctx.createGain()
+  loud.gain.value = 1.6
+  env.connect(dry).connect(loud)
+  env.connect(room).connect(wet).connect(loud)
+  loud.connect(master)
 }
 
 const ready = () => enabled && ctx && ctx.state === "running" && music
@@ -253,8 +285,8 @@ export const sound = {
     music.gain.cancelScheduledValues(at)
     music.gain.setValueAtTime(0.55, at)
     music.gain.exponentialRampToValueAtTime(0.0001, at + 0.03)
-    music.gain.setValueAtTime(0.0001, at + 2.2)
-    music.gain.exponentialRampToValueAtTime(0.55, at + 6)
+    music.gain.setValueAtTime(0.0001, at + 1.6)
+    music.gain.exponentialRampToValueAtTime(0.55, at + 5)
 
     scream(at)
 
