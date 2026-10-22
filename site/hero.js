@@ -4,6 +4,9 @@
 // behind a door jamb or inside a doorway. It never walks: it is just somewhere else every time
 // the dying lamp goes out — peeking from a side door, standing in the far doorway, or right in
 // front of you.
+//
+// It is dark: the only light is a dying flashlight that follows the cursor (or wanders by itself),
+// a lamp that sputters for a moment now and then, and the green crack in the monster's head.
 
 import * as THREE from "three"
 
@@ -57,6 +60,24 @@ function glowTexture() {
   return new THREE.CanvasTexture(c)
 }
 
+// Light shared by every shader: a flashlight beam around the cursor + a near-black ambient.
+// uFlash: beam centre in canvas pixels (x, y from the bottom) and radius in pixels.
+const LIGHT = /* glsl */ `
+  uniform vec3 uFlash;
+  uniform float uPower;   // flashlight 0 (dead) … 1
+  uniform float uAmbient; // the rest of the hallway: almost nothing, more when the lamp sputters
+  uniform float uTime;
+  float lighting() {
+    float d = distance(gl_FragCoord.xy, uFlash.xy);
+    float beam = smoothstep(uFlash.z, uFlash.z * 0.2, d);
+    float hotspot = smoothstep(uFlash.z * 0.32, 0.0, d);
+    return uAmbient + uPower * (beam * 1.15 + hotspot * 0.45);
+  }
+  float grain() {
+    return fract(sin(dot(gl_FragCoord.xy + fract(uTime * 7.13) * 91.7, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+  }
+`
+
 // The body barely moves: shallow breathing, the upper body leaning out of a doorway,
 // the head on the thin neck, long fingers that twitch now and then.
 const monsterVertex = /* glsl */ `
@@ -101,10 +122,9 @@ const monsterVertex = /* glsl */ `
 `
 
 const monsterFragment = /* glsl */ `
+  ${LIGHT}
   uniform sampler2D uMap;
-  uniform float uLight;
-  uniform float uNear;   // 0 deep in the dark … 1 lit
-  uniform float uTime;
+  uniform float uNear;   // 0 deep in the dark … 1 close
   uniform vec4 uClip;    // visible area in px of the hallway drawing: x0, x1, y0, y1
   uniform vec4 uBack;    // backdrop: width, height, centre y, z
   uniform vec2 uCrop;    // backdrop crop: x offset, width (px)
@@ -124,25 +144,33 @@ const monsterFragment = /* glsl */ `
     if (c.a < 0.03) discard;
     float vt = 1.0 - vUv.y;
     float luma = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 color = c.rgb * vec3(0.82, 0.92, 0.88) * uLight * mix(0.3, 1.0, uNear);
-    // the crack in the head glows like the mould on the walls, brighter in the dark
+    float light = lighting();
+    // dead grey skin: desaturated and cold
+    vec3 skin = mix(vec3(luma), c.rgb, 0.4) * vec3(0.78, 0.86, 0.84);
+    vec3 color = skin * light * mix(0.6, 1.0, uNear);
+    // the crack in the head glows in the dark: you see it before you see him
     float crack = smoothstep(0.17, 0.10, vt) * smoothstep(0.05, 0.015, abs(vUv.x - 0.477))
       * smoothstep(0.12, 0.2, luma) * smoothstep(0.42, 0.32, luma);
-    float pulse = 0.55 + 0.45 * sin(uTime * 2.2);
-    color += crack * pulse * vec3(0.55, 0.95, 0.32) * (0.45 + 0.55 * (1.0 - uLight * 0.6));
+    float pulse = 0.5 + 0.5 * sin(uTime * 1.7) * sin(uTime * 0.53 + 1.0);
+    color += crack * (0.35 + 0.65 * pulse) * vec3(0.5, 1.0, 0.28) * 0.9;
+    color += grain() * 0.05;
     gl_FragColor = vec4(color, c.a);
   }
 `
 
 const backdropFragment = /* glsl */ `
+  ${LIGHT}
   uniform sampler2D uMap;
-  uniform float uLight;
   varying vec2 vUv;
   void main() {
     vec3 c = texture2D(uMap, vUv).rgb;
+    float luma = dot(c, vec3(0.299, 0.587, 0.114));
+    vec3 wall = mix(vec3(luma), c, 0.55) * vec3(0.85, 0.95, 0.9);
     // the drawing melts into the dark at its edges, so no border is ever visible
     float edge = smoothstep(0.0, 0.12, vUv.x) * smoothstep(1.0, 0.88, vUv.x) * smoothstep(0.0, 0.06, vUv.y);
-    gl_FragColor = vec4(mix(vec3(0.059), c * uLight, edge), 1.0);
+    vec3 color = mix(vec3(0.0), wall * lighting(), edge);
+    color += grain() * 0.045;
+    gl_FragColor = vec4(color, 1.0);
   }
 `
 
@@ -162,7 +190,7 @@ async function start() {
   } catch {
     return // no WebGL: the page stays as it is
   }
-  renderer.setClearColor(0x0f0f0f)
+  renderer.setClearColor(0x000000)
   renderer.outputColorSpace = THREE.SRGBColorSpace
 
   const scene = new THREE.Scene()
@@ -170,8 +198,11 @@ async function start() {
   camera.position.set(0, EYE, 0)
 
   const [monsterMap, hallMap] = await Promise.all([rasterize(MONSTER, 1.26), rasterize(HALLWAY, 1.5)])
-  const light = { value: 1 }
   const time = { value: 0 }
+  const flash = { value: new THREE.Vector3(0, 0, 200) }
+  const power = { value: 1 }
+  const ambient = { value: 0.03 }
+  const lightUniforms = { uFlash: flash, uPower: power, uAmbient: ambient, uTime: time }
 
   // ---------- the hallway: a backdrop that fills the height of the view ----------
   const backHeight = 2 * Math.abs(BACKDROP_Z) * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * 1.3
@@ -180,7 +211,7 @@ async function start() {
   const backdrop = new THREE.Mesh(
     new THREE.PlaneGeometry(backWidth, backHeight),
     new THREE.ShaderMaterial({
-      uniforms: { uMap: { value: hallMap }, uLight: light },
+      uniforms: { uMap: { value: hallMap }, ...lightUniforms },
       vertexShader: simpleVertex,
       fragmentShader: backdropFragment,
       depthWrite: false,
@@ -205,8 +236,7 @@ async function start() {
   const body = new THREE.ShaderMaterial({
     uniforms: {
       uMap: { value: monsterMap },
-      uTime: time,
-      uLight: light,
+      ...lightUniforms,
       uHead: { value: 0 },
       uLean: { value: 0 },
       uTwitch: { value: 0 },
@@ -254,12 +284,26 @@ async function start() {
   }
   const dustGeometry = new THREE.BufferGeometry()
   dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3))
-  const dustMaterial = new THREE.PointsMaterial({
-    map: glow,
-    color: 0xd8e6cf,
-    size: 0.035,
+  // dust shows only where the beam falls
+  const dustMaterial = new THREE.ShaderMaterial({
+    uniforms: { ...lightUniforms, uMap: { value: glow }, uScale: { value: 400 } },
+    vertexShader: /* glsl */ `
+      uniform float uScale;
+      void main() {
+        vec4 view = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = 0.035 * uScale / -view.z;
+        gl_Position = projectionMatrix * view;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      ${LIGHT}
+      uniform sampler2D uMap;
+      void main() {
+        float a = texture2D(uMap, gl_PointCoord).a;
+        gl_FragColor = vec4(vec3(0.85, 0.9, 0.8), a * 0.6 * max(0.0, lighting() - uAmbient));
+      }
+    `,
     transparent: true,
-    opacity: 0.55,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   })
@@ -282,14 +326,20 @@ async function start() {
     const shift = cx - w / 2
     camera.setViewOffset(w + 2 * Math.abs(shift), h, shift > 0 ? 0 : 2 * Math.abs(shift), 0, w, h)
     camera.updateProjectionMatrix()
+    dustMaterial.uniforms.uScale.value = h * renderer.getPixelRatio()
   }
   addEventListener("resize", resize)
   resize()
 
-  const pointer = { x: 0, y: 0 }
+  // the flashlight follows the cursor; without one (phones) or when it rests, it wanders by itself
+  const pointer = { x: 0, y: 0, px: innerWidth / 2, py: innerHeight / 2, movedAt: -1e9 }
+  const beam = { x: innerWidth * 0.7, y: innerHeight * 0.45 }
   addEventListener("pointermove", (e) => {
     pointer.x = (e.clientX / innerWidth - focusX) * 2
     pointer.y = (e.clientY / innerHeight - 0.5) * 2
+    pointer.px = e.clientX
+    pointer.py = e.clientY
+    pointer.movedAt = performance.now()
   })
 
   // ---------- appearances: the monster is only ever moved in the dark ----------
@@ -367,6 +417,8 @@ async function start() {
 
   // a blackout: short flickers, then darkness long enough to move it
   let burst = null
+  let lampAt = between(6, 10)
+  let lampFlash = null
   function blackout(t) {
     let at = t
     burst = []
@@ -395,12 +447,12 @@ async function start() {
     const dt = Math.min(clock.getDelta(), 0.05)
     const t = (time.value += dt)
 
-    // the dying lamp
-    let lit = 0.9 + 0.06 * Math.sin(t * 13.0) * Math.sin(t * 3.7) + 0.04 * Math.random()
+    // the dying flashlight: it trembles, and its battery gives out in bursts
+    let lit = 0.92 + 0.05 * Math.sin(t * 13.0) * Math.sin(t * 3.7) + 0.03 * Math.random()
     if (current === "scare") {
       // harsh light for half a second, then black — and the hallway is empty again
       const k = t - since
-      lit = k < 0.5 ? 1.2 + 0.15 * Math.random() : 0
+      lit = k < 0.5 ? 1 : 0
       if (k >= 0.5) monster.visible = false
       if (t > until) enter("empty", t)
     } else {
@@ -414,11 +466,32 @@ async function start() {
             enter(next(), t)
             if (current === "scare") burst = null // it is already in front of you
           }
-          if (burst) lit = step.on ? 0.95 : 0.03
+          if (burst) lit = step.on ? 0.9 : 0
         }
       }
     }
-    light.value = lit
+    power.value = lit
+    // the ceiling lamp sputters on for a moment now and then and shows the whole hallway
+    if (t > lampAt) {
+      lampAt = t + between(9, 18)
+      lampFlash = [t + 0.0, t + 0.07, t + 0.16, t + 0.22]
+    }
+    const lampOn = lampFlash && ((t > lampFlash[0] && t < lampFlash[1]) || (t > lampFlash[2] && t < lampFlash[3]))
+    ambient.value = current === "scare" ? (lit > 0 ? 0.9 : 0) : lampOn ? 0.55 : 0.025
+
+    // where the beam points: the cursor, with a lag and a shaking hand; or a slow search
+    const idle = performance.now() - pointer.movedAt > 4000
+    const goalX = idle ? innerWidth * focusX + Math.sin(t * 0.23) * innerWidth * 0.16 + Math.sin(t * 0.61) * 40 : pointer.px
+    const goalY = idle ? innerHeight * (0.5 + 0.18 * Math.sin(t * 0.31 + 1.3)) : pointer.py
+    beam.x += (goalX - beam.x) * Math.min(1, dt * (idle ? 1.2 : 6))
+    beam.y += (goalY - beam.y) * Math.min(1, dt * (idle ? 1.2 : 6))
+    const ratio = renderer.getPixelRatio()
+    const shake = 3 * Math.sin(t * 17.0) + 2 * Math.sin(t * 29.0)
+    flash.value.set(
+      (beam.x + shake) * ratio,
+      (innerHeight - beam.y + shake * 0.6) * ratio,
+      Math.min(innerWidth, innerHeight) * 0.3 * ratio,
+    )
 
     // the head slowly follows the cursor; the fingers twitch now and then
     const appearance = appearances[current]
@@ -444,8 +517,7 @@ async function start() {
       if (positions[i * 3 + 1] < 0) positions[i * 3 + 1] = 2.7
     }
     dustGeometry.attributes.position.needsUpdate = true
-    dustMaterial.opacity = 0.55 * Math.min(1, lit)
-    lamp.material.opacity = 0.22 * Math.min(1, lit)
+    lamp.material.opacity = lampOn ? 0.35 : 0
 
     renderer.render(scene, camera)
   }
