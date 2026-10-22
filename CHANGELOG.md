@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0 — 2026-10-22
+
+- In-game purchases in the `Platform` interface: `features` (ads / purchases / leaderboard), `getProducts`, `purchase`, `getPurchases`, `consumePurchase`; `guard()` covers them (a payment window that never answers ends as a failed purchase, broken catalogs are filtered).
+- `src/shop.ts`: restores owned products on start, permanent and consumable products (consumed after delivery, undelivered ones delivered on the next start), titles and prices from the portal; the menu sells "Remove ads" (`no_ads`) where purchases work, and bought it turns off interstitials. Without an SDK purchases are emulated under `npm run dev` only.
+- Yandex Games: purchases through `getPayments()` (catalog, purchase, restore, consume).
+- New SDKs: `--sdk=vk` (VK Games through `@vkontakte/vk-bridge`: ads, VK storage saves, language, pause when hidden), `--sdk=crazygames` (SDK v3: loading/gameplay events, midgame and rewarded ads, `SDK.data` saves), `--sdk=poki` (SDK v2: loading/gameplay events, commercial and rewarded breaks, no page scroll from keys), each with a guide (`VK.md`, `CRAZYGAMES.md`, `POKI.md`); `src/platform/script.ts` loads SDK scripts with a timeout.
+- `e2e/sdk-mock.ts` mocks the Yandex (with payments), CrazyGames and Poki SDKs; the browser check buys "Remove ads" where purchases work.
+- `npm run optimize` (`scripts/optimize-models.mjs`): source models in `models/` → compressed copies in `public/models/` (gltf-transform via npx: meshopt geometry, WebP textures ≤1024 px, unchanged models skipped); the demo tree is now 3.9 KB instead of 9.7 KB.
+- `RECIPES.md`: a recipe for a new purchase.
+
 ## 1.3.0 — 2026-10-22
 
 - Quality toolchain in the template: ESLint 10 + typescript-eslint + React hooks, Prettier, Vitest unit tests (`npm test`), Playwright browser check (`npm run test:e2e`, `e2e/game.spec.ts`) and `npm run check` (lint + types + tests + build); the GitHub Pages workflow runs `npm run check` before deploying.

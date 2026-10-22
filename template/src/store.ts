@@ -5,6 +5,7 @@ import { COINS } from "./config"
 import { platform } from "./platform"
 import { isRecord, isWin } from "./rules"
 import { DEFAULT_SAVE, nextVolume, save, type Settings } from "./save"
+import { PRODUCTS, shop } from "./shop"
 
 type Phase = "menu" | "playing" | "won"
 
@@ -19,6 +20,8 @@ interface GameState {
   best: number
   /** Volume settings from the menu, saved with the record */
   settings: Settings
+  /** "Remove ads" is bought: no interstitials between runs */
+  noAds: boolean
   /** The platform paused the game: ad, hidden tab */
   paused: boolean
   pausedAt: number
@@ -31,6 +34,8 @@ interface GameState {
   setTouch: (key: keyof GameState["touch"], down: boolean) => void
   /** Settings button: the next volume level of effects or music */
   changeVolume: (key: keyof Settings) => void
+  /** Opens the platform's payment window for "Remove ads" */
+  buyNoAds: () => Promise<void>
 }
 
 export const useGame = create<GameState>((set, get) => ({
@@ -41,6 +46,7 @@ export const useGame = create<GameState>((set, get) => ({
   finishedAt: 0,
   best: 0,
   settings: DEFAULT_SAVE.settings,
+  noAds: false,
   paused: false,
   pausedAt: 0,
   touch: { forward: false, back: false, left: false, right: false, jump: false },
@@ -70,7 +76,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (record) save.update({ best: time })
     void platform.submitScore(time) // leaderboard of type "time", in milliseconds
     // Interstitial ad at a logical pause (Yandex SDK; without an SDK it resolves at once)
-    void platform.showFullscreenAd()
+    if (!get().noAds) void platform.showFullscreenAd()
   },
 
   pause: () => {
@@ -93,5 +99,10 @@ export const useGame = create<GameState>((set, get) => ({
     const { settings } = save.update({ settings: { [key]: nextVolume(get().settings[key]) } }, 1000)
     applyVolumes(settings)
     set({ settings })
+  },
+
+  buyNoAds: async () => {
+    // The payment window pauses the game through platform.onPause
+    if (await shop.buy(PRODUCTS.noAds)) set({ noAds: true })
   },
 }))

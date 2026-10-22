@@ -2,6 +2,7 @@ import { useEffect } from "react"
 
 import { t, volumeLabel } from "../i18n"
 import { formatSeconds } from "../rules"
+import { PRODUCTS, shop } from "../shop"
 import { useGame } from "../store"
 
 export function Menu() {
@@ -11,6 +12,8 @@ export function Menu() {
   const settings = useGame((s) => s.settings)
   const start = useGame((s) => s.start)
   const changeVolume = useGame((s) => s.changeVolume)
+  const noAds = useGame((s) => s.noAds)
+  const buyNoAds = useGame((s) => s.buyNoAds)
   const text = t()
 
   // Enter starts the game from the keyboard (on a focused button Enter presses that button instead)
@@ -40,6 +43,12 @@ export function Menu() {
         <div className="settings">
           <button onClick={() => changeVolume("sound")}>{volumeLabel("sound", settings.sound)}</button>
           <button onClick={() => changeVolume("music")}>{volumeLabel("music", settings.music)}</button>
+          {/* Sold only where the platform has purchases (dev mode without an SDK, Yandex) */}
+          {shop.available && !noAds && (
+            <button className="offer" onClick={buyNoAds}>
+              {text.noAds} · {shop.product(PRODUCTS.noAds).price}
+            </button>
+          )}
         </div>
       </div>
     </div>

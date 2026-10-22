@@ -1,12 +1,12 @@
-import type { Platform, SaveData } from "./types"
+import type { Features, Platform, Product, Purchase, SaveData } from "./types"
 
 // Portal SDKs fail in many ways: ad blockers, no network, a method missing in an old SDK version,
 // a callback that never comes. The game must never hang or crash because of that, so every
 // platform goes through guard(): errors are logged and replaced with a safe answer, and calls
 // that wait for the SDK have a time limit.
 
-/** Time limits in ms. An ad can run 30+ s and the player may wait before closing it */
-export const LIMITS = { init: 10_000, ad: 120_000, data: 8_000, score: 8_000 }
+/** Time limits in ms. An ad can run 30+ s; a payment window waits for the player to pay */
+export const LIMITS = { init: 10_000, ad: 120_000, data: 8_000, score: 8_000, purchase: 600_000 }
 
 const warn = (method: string, error: unknown) => console.warn(`[platform] ${method}:`, error)
 
@@ -49,6 +49,15 @@ function quiet(method: string, call: () => void) {
   }
 }
 
+const NO_FEATURES: Features = { ads: false, purchases: false, leaderboard: false }
+
+const isProduct = (p: unknown): p is Product =>
+  Boolean(p) && typeof (p as Product).id === "string" && typeof (p as Product).title === "string"
+const isPurchase = (p: unknown): p is Purchase =>
+  Boolean(p) && typeof (p as Purchase).productId === "string" && typeof (p as Purchase).token === "string"
+const listOf = <T>(value: unknown, check: (item: unknown) => item is T): T[] =>
+  Array.isArray(value) ? value.filter(check) : []
+
 export function guard(platform: Platform): Platform {
   return {
     get name() {
@@ -59,6 +68,14 @@ export function guard(platform: Platform): Platform {
         return platform.lang || "en"
       } catch {
         return "en"
+      }
+    },
+
+    get features() {
+      try {
+        return { ...NO_FEATURES, ...platform.features }
+      } catch {
+        return NO_FEATURES
       }
     },
 
@@ -81,6 +98,21 @@ export function guard(platform: Platform): Platform {
       Number.isFinite(score)
         ? safe("submitScore", () => platform.submitScore(score), LIMITS.score, undefined)
         : Promise.resolve(),
+
+    // Shop: no catalog, a cancelled or failed payment — the game just sells nothing this time
+    getProducts: () =>
+      safe("getProducts", () => platform.getProducts(), LIMITS.data, [] as Product[]).then((list) =>
+        listOf(list, isProduct).map((p) => ({ ...p, price: String(p.price ?? "") })),
+      ),
+    purchase: (productId) =>
+      safe("purchase", () => platform.purchase(productId), LIMITS.purchase, null).then((p) =>
+        isPurchase(p) ? p : null,
+      ),
+    getPurchases: () =>
+      safe("getPurchases", () => platform.getPurchases(), LIMITS.data, [] as Purchase[]).then((list) =>
+        listOf(list, isPurchase),
+      ),
+    consumePurchase: (token) => safe("consumePurchase", () => platform.consumePurchase(token), LIMITS.data, undefined),
 
     // A throwing pause handler must not stop the other handlers
     onPause: (callback) => quiet("onPause", () => platform.onPause(() => quiet("pause handler", callback))),

@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "optimize": "node scripts/optimize-models.mjs",
     "zip": "npm run build && node scripts/zip.mjs"
   },
   "dependencies": {

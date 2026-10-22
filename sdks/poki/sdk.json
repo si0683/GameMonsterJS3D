@@ -1,0 +1,9 @@
+{
+  "title": "Poki",
+  "description": "Poki SDK v2: loading and gameplay events, commercial and rewarded breaks, no page scroll from keys",
+  "append": [
+    "AGENTS.md",
+    "README.md",
+    "PROMT.md"
+  ]
+}

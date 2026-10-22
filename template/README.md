@@ -10,6 +10,7 @@ npm run dev      # игра на http://localhost:5173, правки видны 
 npm run build    # готовая игра в папке dist/
 npm run preview  # посмотреть собранную dist/
 npm run zip      # game.zip (index.html в корне) для игровых порталов
+npm run optimize # сжать модели из models/ в public/models/ (meshopt + WebP)
 npm run check     # перед коммитом: линтер, типы, тесты, сборка
 npm test          # модульные тесты (Vitest): правила, сохранения, платформа
 npm run test:e2e  # игра в браузере (Playwright); первый раз: npx playwright install chromium
@@ -34,7 +35,8 @@ src/game/
   Coin.tsx             монета (сенсор: ловит касание шара)
   Tree.tsx             модель glTF из public/models/tree.glb
 src/ui/                меню, счёт, кнопки для телефона
-public/models/         3D-модели .glb
+models/                исходные 3D-модели .glb (npm run optimize сжимает их в public/models/)
+public/models/         сжатые модели, которые грузит игра
 public/sounds/         звуки (CREDITS.md — авторы)
 e2e/game.spec.ts       проверка игры в браузере (Playwright)
 ```
@@ -68,7 +70,9 @@ return <Clone object={scene} />
 
 Код игры не обращается к SDK порталов напрямую — только к `platform` из `src/platform/`: `init`, `ready`, `gameplayStart`/`gameplayStop`, `showFullscreenAd`, `showRewardedAd`, `loadData`/`saveData`, `submitScore`, `lang`, `onPause`/`onResume`.
 
-Проект создан **без SDK** (`src/platform/none.ts`): сохранения в localStorage, язык браузера, реклама не показывается. Версию под Яндекс Игры создают командой `npm create …@latest my-game -- --sdk=yandex`.
+Проект создан **без SDK** (`src/platform/none.ts`): сохранения в localStorage, язык браузера, реклама не показывается. Версии под игровые порталы создают командой `npm create …@latest my-game -- --sdk=yandex` (или `vk`, `crazygames`, `poki`).
+
+**Покупки** — через `shop` из `src/shop.ts`. В меню есть пример: «Убрать рекламу». Без SDK покупка работает только в `npm run dev` — бесплатно и сразу, чтобы проверить игру; в собранной игре кнопки нет. Как добавить свой товар — в `RECIPES.md`.
 
 ## Выкладка на GitHub Pages
 

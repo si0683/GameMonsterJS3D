@@ -1,0 +1,9 @@
+{
+  "title": "CrazyGames",
+  "description": "CrazyGames SDK v3: loading and gameplay events, midgame and rewarded ads, cloud saves (SDK.data)",
+  "append": [
+    "AGENTS.md",
+    "README.md",
+    "PROMT.md"
+  ]
+}

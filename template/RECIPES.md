@@ -33,14 +33,14 @@
 
 ## Новая 3D-модель
 
-1. Файл `.glb` — в `public/models/` (бесплатные модели: [Kenney](https://kenney.nl/assets), [Poly Pizza](https://poly.pizza)). Автора и лицензию — в `public/CREDITS.md`.
+1. Исходный `.glb` — в `models/` (сжатая копия для игры появится в `public/models/`, шаг 4) (бесплатные модели: [Kenney](https://kenney.nl/assets), [Poly Pizza](https://poly.pizza)). Автора и лицензию — в `public/CREDITS.md`.
 2. Загрузка — как в `Tree.tsx`: `const { scene } = useGLTF(url)` и `<Clone object={scene} castShadow />` (одна загруженная модель, сколько угодно копий). Типизированный компонент из модели: `npx gltfjsx public/models/rock.glb --types`.
 3. Предзагрузка, чтобы модель не появлялась с задержкой: `useGLTF.preload(url)` рядом с компонентом. `<Suspense>` в `App.tsx` дождётся её до `platform.ready()`.
-4. **Сжатие** перед добавлением в игру — модели часто весят мегабайты:
+4. **Сжатие.** Исходник кладите в `models/rock.glb`, затем:
    ```bash
-   npx @gltf-transform/cli optimize rock.glb public/models/rock.glb --compress meshopt --texture-compress webp
+   npm run optimize   # models/*.glb → public/models/*.glb: meshopt-геометрия, текстуры WebP до 1024 px
    ```
-   Для meshopt-моделей в `useGLTF` ничего включать не нужно — декодер встроен в drei.
+   Повторный запуск пропускает неизменённые модели (`npm run optimize -- --force` — пересжать все). Декодер meshopt уже встроен в `useGLTF` из drei.
 
 ## Новый звук
 
@@ -71,6 +71,16 @@
 1. В `src/i18n.ts` добавьте набор `tr: { … }` с теми же ключами, что у `ru`. Тест `i18n.test.ts` проверит, что ничего не пропущено.
 2. В `pickLanguage()` верните `"tr"` для `lang === "tr"`.
 3. Тексты в интерфейсе — только через `t()`, без строк в компонентах.
+
+## Новая покупка
+
+Покупки идут через `shop` из `src/shop.ts` — он знает, что куплено, и не выдаст товар дважды. Пример в шаблоне — «Убрать рекламу» (`no_ads`).
+
+1. **Товар на портале.** Создайте его в консоли площадки (Яндекс Игры: вкладка «Покупки») с id, например `skin_gold`. Название и цена в игре придут оттуда.
+2. **Постоянный товар** (скин, уровни, без рекламы): добавьте id в `PRODUCTS` в `src/shop.ts` и проверяйте `shop.has(PRODUCTS.skinGold)`.
+3. **Расходуемый товар** (монеты, жизни): передайте выдачу вторым аргументом — `createShop(platform, { coins_100: () => addCoins(100) })`. Магазин выдаст товар и вызовет `consumePurchase`; оплаченный, но не выданный (закрыли вкладку) — выдаст при следующем запуске.
+4. **Кнопка:** только если `shop.available` (на площадке есть покупки), подпись — `shop.product(id).price`. Покупка — `await shop.buy(id)`: `true` — оплачено и выдано, `false` — игрок закрыл окно или оплата не прошла.
+5. **Проверка:** в `npm run dev` без SDK покупки бесплатные и мгновенные (хранятся в localStorage, сброс — очистить данные сайта). Тест — в `src/shop.test.ts`, шаг покупки — в `e2e/game.spec.ts`.
 
 ## Реклама за награду
 

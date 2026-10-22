@@ -1,5 +1,6 @@
 import { platform as web } from "./none"
-import type { Platform, SaveData } from "./types"
+import { loadScript } from "./script"
+import type { Platform, Product, Purchase, SaveData } from "./types"
 
 // Yandex Games SDK — https://yandex.ru/dev/games/doc/ru/sdk/sdk-about
 // The SDK script /sdk.js exists only on Yandex servers (and behind @yandex-games/sdk-dev-proxy).
@@ -20,6 +21,18 @@ interface YaPlayer {
   setData(data: SaveData, flush?: boolean): Promise<void>
 }
 
+interface YaPurchase {
+  productID: string
+  purchaseToken: string
+}
+
+interface YaPayments {
+  getCatalog(): Promise<{ id: string; title: string; price: string }[]>
+  purchase(options: { id: string; developerPayload?: string }): Promise<YaPurchase>
+  getPurchases(): Promise<YaPurchase[]>
+  consumePurchase(token: string): Promise<void>
+}
+
 interface YaSdk {
   environment: { i18n: { lang: string } }
   features: {
@@ -32,6 +45,7 @@ interface YaSdk {
   }
   leaderboards: { setScore(name: string, score: number, extraData?: string): Promise<void> }
   getPlayer(options?: { signed?: boolean }): Promise<YaPlayer>
+  getPayments(options?: { signed?: boolean }): Promise<YaPayments>
   isAvailableMethod(method: string): Promise<boolean>
   on(event: string, callback: () => void): void
 }
@@ -43,6 +57,8 @@ declare global {
 }
 
 let sdk: YaSdk | undefined
+/** Purchases work once the game is approved for them in the console; until then getPayments() fails */
+let payments: YaPayments | undefined
 let player: Promise<YaPlayer | undefined> | undefined
 let playing = false
 let readySent = false
@@ -53,17 +69,7 @@ const resumeCallbacks: (() => void)[] = []
 const pause = () => pauseCallbacks.forEach((callback) => callback())
 const resume = () => resumeCallbacks.forEach((callback) => callback())
 
-/** The SDK is connected dynamically with the relative path /sdk.js (required for archives uploaded to the console) */
-function loadScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    const script = document.createElement("script")
-    script.src = "/sdk.js"
-    script.async = true
-    script.onload = () => resolve(true)
-    script.onerror = () => resolve(false)
-    document.head.append(script)
-  })
-}
+const toPurchase = (p: YaPurchase): Purchase => ({ productId: p.productID, token: p.purchaseToken })
 
 function getPlayer() {
   player ??= sdk?.getPlayer().catch(() => undefined)
@@ -77,9 +83,14 @@ export const platform: Platform = {
     return sdk?.environment.i18n.lang ?? web.lang
   },
 
+  get features() {
+    return sdk ? { ads: true, purchases: Boolean(payments), leaderboard: true } : web.features
+  },
+
   async init() {
     await web.init()
-    if (!(await loadScript()) || !window.YaGames) {
+    // The relative path /sdk.js is required for archives uploaded to the console
+    if (!(await loadScript("/sdk.js")) || !window.YaGames) {
       console.warn(
         "[platform] Yandex SDK not found (/sdk.js) — running without it. Use `npm run yandex` to test with the SDK.",
       )
@@ -93,7 +104,9 @@ export const platform: Platform = {
       sdk = instance
     } catch (error) {
       console.warn("[platform] Yandex SDK failed to start — running without it:", error)
+      return
     }
+    payments = await sdk.getPayments({ signed: false }).catch(() => undefined)
   },
 
   ready() {
@@ -191,6 +204,33 @@ export const platform: Platform = {
     } catch (error) {
       console.warn("[platform] leaderboard:", error)
     }
+  },
+
+  // Purchases: products and prices come from the console («Покупки» tab).
+  // The payment window pauses the game through game_api_pause / game_api_resume.
+  async getProducts(): Promise<Product[]> {
+    if (!payments) return web.getProducts()
+    const catalog = await payments.getCatalog()
+    return catalog.map((p) => ({ id: p.id, title: p.title, price: p.price }))
+  },
+
+  async purchase(productId) {
+    if (!payments) return web.purchase(productId)
+    try {
+      return toPurchase(await payments.purchase({ id: productId }))
+    } catch {
+      return null // the player closed the window or the payment failed
+    }
+  },
+
+  async getPurchases() {
+    if (!payments) return web.getPurchases()
+    return (await payments.getPurchases()).map(toPurchase)
+  },
+
+  async consumePurchase(token) {
+    if (!payments) return web.consumePurchase(token)
+    await payments.consumePurchase(token)
   },
 
   // With the SDK, game_api_pause/resume also cover hidden tabs; without it the browser event is used.

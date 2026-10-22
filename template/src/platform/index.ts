@@ -4,4 +4,4 @@ import { guard } from "./guard"
 import { platform as current } from "./none"
 
 export const platform = guard(current)
-export type { Platform, SaveData } from "./types"
+export type { Features, Platform, Product, Purchase, SaveData } from "./types"

@@ -23,11 +23,18 @@ const TEMPLATE = fileURLToPath(new URL("../template", import.meta.url))
 const SDKS = fileURLToPath(new URL("../sdks", import.meta.url))
 const sdkList = [
   { name: "none", title: "без SDK" },
-  ...(existsSync(SDKS) ? readdirSync(SDKS) : []).map((name) => ({
+  ...(existsSync(SDKS) ? readdirSync(SDKS) : [])
+    // Russian portals first, then international ones
+    .sort((a, b) => sdkRank(a) - sdkRank(b))
+    .map((name) => ({
     name,
     ...JSON.parse(readFileSync(join(SDKS, name, "sdk.json"), "utf8")),
   })),
 ]
+function sdkRank(name) {
+  const order = ["yandex", "vk", "crazygames", "poki"]
+  return order.includes(name) ? order.indexOf(name) : order.length
+}
 const SKIP = new Set(["node_modules", "dist", "package-lock.json", "test-results", "playwright-report"])
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"))
 

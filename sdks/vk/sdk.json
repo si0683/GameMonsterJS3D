@@ -1,0 +1,14 @@
+{
+  "title": "VK Игры",
+  "description": "VK Games through VK Bridge: ads (interstitial, rewarded), cloud saves in VK storage, language, pause when hidden",
+  "package": {
+    "dependencies": {
+      "@vkontakte/vk-bridge": "^3.0.2"
+    }
+  },
+  "append": [
+    "AGENTS.md",
+    "README.md",
+    "PROMT.md"
+  ]
+}

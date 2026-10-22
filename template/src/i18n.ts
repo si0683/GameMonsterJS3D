@@ -17,6 +17,7 @@ export const texts = {
     sound: "Звук",
     music: "Музыка",
     off: "выкл",
+    noAds: "Убрать рекламу",
   },
   en: {
     title: "My 3D Game",
@@ -32,6 +33,7 @@ export const texts = {
     sound: "Sound",
     music: "Music",
     off: "off",
+    noAds: "Remove ads",
   },
 }
 

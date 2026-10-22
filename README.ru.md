@@ -36,21 +36,33 @@ npm run dev
 
 ## SDK платформы
 
-Установщик спрашивает, под какую платформу собирать. Можно указать сразу:
+Установщик спрашивает, под какую площадку собирать. Можно указать сразу:
 
 ```bash
-npm create gamemonsterjs3d@latest my-game -- --sdk=none     # без SDK — обычная веб-сборка (по умолчанию)
-npm create gamemonsterjs3d@latest my-game -- --sdk=yandex   # SDK Яндекс Игр
+npm create gamemonsterjs3d@latest my-game -- --sdk=none         # без SDK — обычная веб-сборка (по умолчанию)
+npm create gamemonsterjs3d@latest my-game -- --sdk=yandex       # Яндекс Игры
+npm create gamemonsterjs3d@latest my-game -- --sdk=vk           # VK Игры (vk.com/games)
+npm create gamemonsterjs3d@latest my-game -- --sdk=crazygames   # CrazyGames
+npm create gamemonsterjs3d@latest my-game -- --sdk=poki         # Poki
 ```
 
-Игра обращается к одному интерфейсу — `platform` в `src/platform/`. Через него идут запуск, «игра готова», начало и конец геймплея, реклама (полноэкранная и за награду), сохранения, лидерборд, язык, пауза и продолжение.
+Игра обращается к одному интерфейсу — `platform` в `src/platform/`: запуск, «игра готова», начало и конец геймплея, реклама (полноэкранная и за награду), сохранения, лидерборд, покупки, язык, пауза. SDK меняет только реализацию; код игры не меняется. Ошибки и зависания SDK перехватывает `guard()` — игра не ломается.
 
-- **Без SDK** платформа работает через localStorage и браузер.
-- **С `yandex`** те же вызовы уходят в [SDK Яндекс Игр](https://yandex.ru/dev/games/doc/ru/sdk/sdk-about). Дополнительно появляются:
-  - `npm run yandex` — проверка с настоящим SDK через `@yandex-games/sdk-dev-proxy`;
-  - `YANDEX.md` — публикация и чек-лист модерации.
+| SDK | Реклама | Покупки | Облачные сохранения | Лидерборд | Файл с инструкцией |
+|---|---|---|---|---|---|
+| `none` | — | только в `npm run dev` (тест) | localStorage | — | — |
+| `yandex` | ✔ | ✔ | ✔ | ✔ | `YANDEX.md` |
+| `vk` | ✔ | нужен свой сервер | ✔ | — | `VK.md` |
+| `crazygames` | ✔ | Xsolla, для одобренных игр | ✔ | — | `CRAZYGAMES.md` |
+| `poki` | ✔ | — | localStorage | — | `POKI.md` |
+
+**Покупки** — модуль `src/shop.ts`: восстановление купленного при каждом запуске, постоянные и расходуемые товары. Пример — кнопка «Убрать рекламу» в меню: показывается только там, где площадка продаёт.
+
+VK Play (vkplay.ru) открытого JS SDK для HTML5-игр не даёт (только партнёрская интеграция с сервером), поэтому для VK взят каталог VK Игр.
 
 В любом проекте есть `npm run zip`: он собирает `game.zip` с `index.html` в корне для игровых порталов.
+
+**Сжатие моделей:** положите исходные `.glb` в `models/` и запустите `npm run optimize` — сжатые модели (meshopt, текстуры WebP до 1024 px) появятся в `public/models/`. Дерево из демо: 9,7 → 3,9 КБ.
 
 ## Проект через ИИ
 
