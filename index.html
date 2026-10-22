@@ -166,6 +166,35 @@
     <footer>MIT · <a href="https://github.com/si0683/GameMonsterJS3D#readme">README</a> · 2D: <a href="https://si0683.github.io/GameMonsterJS2D/">GameMonsterJS2D</a></footer>
   </main>
 
+  <script>
+    // One screen on every device: when the panel is taller than the screen (small phones, a phone
+    // on its side) it is scaled down as a whole — the same look, just smaller. Not below 75 %:
+    // smaller text is unreadable, then the page scrolls instead.
+    (function () {
+      var panel = document.querySelector('main');
+      function fit() {
+        // the real screen width (innerWidth can briefly include overflowing content on phones)
+        var width = document.documentElement.clientWidth;
+        var height = innerHeight - 16;
+        panel.style.zoom = '';
+        panel.style.width = '';
+        var scale = Math.max(0.75, Math.min(1, height / panel.getBoundingClientRect().height));
+        // a scaled panel gets the full width back (in its own units), so text wraps less: re-measure
+        for (var i = 0; i < 4 && scale < 1; i++) {
+          panel.style.zoom = scale;
+          panel.style.width = Math.min(680, (width - 32) / scale) + 'px';
+          var next = Math.max(0.75, Math.min(1, (scale * height) / panel.getBoundingClientRect().height));
+          if (Math.abs(next - scale) < 0.004) break;
+          scale = next;
+        }
+        panel.style.zoom = scale < 1 ? scale : '';
+        panel.style.width = scale < 1 ? Math.min(680, (width - 32) / scale) + 'px' : '';
+      }
+      fit();
+      addEventListener('resize', fit);
+      document.fonts && document.fonts.ready.then(fit);
+    })();
+  </script>
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
   </script>
