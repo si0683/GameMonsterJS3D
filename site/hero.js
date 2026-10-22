@@ -10,7 +10,7 @@
 
 import * as THREE from "three"
 
-import { sound } from "./sound.js"
+import { sound } from "./sound.js?v=6"
 
 const canvas = document.getElementById("scene")
 const panel = document.querySelector("main")

@@ -71,13 +71,13 @@
     .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.85)); }
     main {
       position: relative; padding: 16px 20px; border-radius: 16px; border: 1px solid var(--line);
-      background: rgba(8, 8, 8, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+      background: rgba(6, 6, 6, 0.3);
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
     }
     /* no room beside the panel: it turns into dark glass and the monster shows through */
     @media (max-width: 1099px) {
-      main { background: rgba(8, 8, 8, 0.42); }
+      main { background: rgba(6, 6, 6, 0.34); }
     }
     /* ---------- the panel in the style of the hallway ---------- */
     main {
@@ -106,7 +106,7 @@
     li::before {
       background: transparent; color: var(--muted); border: 1px solid var(--line);
     }
-    .cmd { background: rgba(0, 0, 0, 0.55); color: var(--term-text); border: 1px solid var(--line); border-radius: 6px; }
+    .cmd { background: rgba(0, 0, 0, 0.45); color: var(--term-text); border: 1px solid var(--line); border-radius: 6px; }
     .cmd code::before { content: "› "; color: var(--muted); }
     .cmd button { background: var(--bone); color: #151918; transition: background 0.15s, box-shadow 0.15s; }
     .cmd button:hover { background: #ece8de; }
@@ -171,9 +171,9 @@
   <script type="importmap">
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
   </script>
-  <script type="module" src="site/hero.js"></script>
+  <script type="module" src="site/hero.js?v=6"></script>
   <script type="module">
-    import { sound } from "./site/sound.js"
+    import { sound } from "./site/sound.js?v=6"
     const button = document.querySelector(".btn.sound")
     const show = () => {
       button.setAttribute("aria-pressed", String(sound.enabled))
