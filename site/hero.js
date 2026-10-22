@@ -13,7 +13,6 @@ import * as THREE from "three"
 import { sound } from "./sound.js?v=6"
 
 const canvas = document.getElementById("scene")
-const panel = document.querySelector("main")
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // ---------- source drawings: crops (px of the SVG) around the subject ----------
@@ -326,7 +325,7 @@ async function start() {
   dust.renderOrder = 2
   scene.add(dust)
 
-  // ---------- layout: the hallway is centred in the free space next to the text panel ----------
+  // ---------- layout: the panel sits in the middle, the hallway behind it ----------
   let focusX = 0.5
   function resize() {
     const w = innerWidth
@@ -334,12 +333,8 @@ async function start() {
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5))
     renderer.setSize(w, h, false)
     camera.aspect = w / h
-    const box = panel.getBoundingClientRect()
-    const free = w - box.right
-    const cx = free > 300 ? box.right + free / 2 : w / 2
-    focusX = cx / w
-    const shift = cx - w / 2
-    camera.setViewOffset(w + 2 * Math.abs(shift), h, shift > 0 ? 0 : 2 * Math.abs(shift), 0, w, h)
+    // the panel is in the middle, see-through: the hallway is centred behind it
+    focusX = 0.5
     camera.updateProjectionMatrix()
     dustMaterial.uniforms.uScale.value = h * renderer.getPixelRatio()
   }
@@ -437,6 +432,7 @@ async function start() {
     until = t + appearances[name].length()
     monster.visible = false
     S.uLean.value = 0
+    canvas.classList.remove("over")
     if (name === "scare") shown = 0
     else if (name !== "empty") shown++
     appearances[name].enter?.()
@@ -483,6 +479,8 @@ async function start() {
       // harsh light for half a second, then black — and the hallway is empty again
       const k = t - since
       lit = k < 0.5 ? 1 : 0
+      // the face jumps out in front of the panel, then the dark takes it back behind
+      canvas.classList.toggle("over", k < 0.5)
       if (k >= 0.5) monster.visible = false
       if (t > until) enter("empty", t)
     } else {
