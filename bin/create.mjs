@@ -6,7 +6,7 @@
 //   npx create-gamemonsterjs3d my-game --no-install --no-git
 
 import { spawnSync } from "node:child_process"
-import { appendFileSync, cpSync, existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { appendFileSync, cpSync, existsSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { basename, join, relative, resolve } from "node:path"
 import { createInterface } from "node:readline/promises"
 import { fileURLToPath } from "node:url"
@@ -31,6 +31,16 @@ const sdkList = [
     ...JSON.parse(readFileSync(join(SDKS, name, "sdk.json"), "utf8")),
   })),
 ]
+// Optional camera views: views/<name>/ = view.json + files/ (over the template) + append/ (docs);
+// "third" is the template itself (a ball rolled from a camera behind it)
+const VIEWS = fileURLToPath(new URL("../views", import.meta.url))
+const viewList = [
+  { name: "third", title: "от третьего лица — шар, камера сзади (демо: собрать монеты)" },
+  ...(existsSync(VIEWS) ? readdirSync(VIEWS) : []).map((name) => ({
+    name,
+    ...JSON.parse(readFileSync(join(VIEWS, name, "view.json"), "utf8")),
+  })),
+]
 function sdkRank(name) {
   const order = ["yandex", "vk", "crazygames", "poki"]
   return order.includes(name) ? order.indexOf(name) : order.length
@@ -49,10 +59,13 @@ const args = process.argv.slice(2)
 const flags = new Set()
 let target
 let sdk
+let view
 for (let i = 0; i < args.length; i++) {
   const arg = args[i]
   if (arg === "--sdk") sdk = args[++i]
   else if (arg.startsWith("--sdk=")) sdk = arg.slice(6)
+  else if (arg === "--view") view = args[++i]
+  else if (arg.startsWith("--view=")) view = arg.slice(7)
   else if (arg.startsWith("-")) flags.add(arg)
   else target ??= arg
 }
@@ -61,8 +74,9 @@ if (flags.has("-h") || flags.has("--help")) {
   console.log(`
 ${bold(`create-${PACKAGE}`)} ${dim(version)}
 
-  npm create ${PACKAGE}@latest ${dim("[folder]")} ${dim("[-- --sdk=<name> --no-install --no-git]")}
+  npm create ${PACKAGE}@latest ${dim("[folder]")} ${dim("[-- --view=<name> --sdk=<name> --no-install --no-git]")}
 
+  --view=<name>  camera: ${viewList.map((v) => v.name).join(" | ")} (third — a ball from behind, first — first-person horror)
   --sdk=<name>   platform SDK: ${sdkList.map((s) => `${s.name} (${s.title})`).join(", ")}
   --no-install   do not run npm install
   --no-git       do not run git init
@@ -72,9 +86,15 @@ ${bold(`create-${PACKAGE}`)} ${dim(version)}
 
 console.log(`\n${magenta(bold(NAME))} ${dim(version)} — ${STACK}\n`)
 
-if (process.stdin.isTTY && (!target || !sdk)) {
+if (process.stdin.isTTY && (!target || !sdk || !view)) {
   const rl = createInterface({ input: process.stdin, output: process.stdout })
   if (!target) target = (await rl.question(`Папка проекта ${dim(`(${DEFAULT_DIR})`)}: `)).trim()
+  if (!view && viewList.length > 1) {
+    console.log("Вид:")
+    viewList.forEach((v, i) => console.log(`  ${i + 1} — ${v.title}`))
+    const answer = (await rl.question(`Выберите ${dim("(1)")}: `)).trim()
+    view = viewList[Number(answer) - 1]?.name ?? (viewList.some((v) => v.name === answer) ? answer : undefined)
+  }
   if (!sdk && sdkList.length > 1) {
     console.log("SDK платформы:")
     sdkList.forEach((s, i) => console.log(`  ${i + 1} — ${s.title}`))
@@ -84,6 +104,12 @@ if (process.stdin.isTTY && (!target || !sdk)) {
   rl.close()
 }
 target ||= DEFAULT_DIR
+view ||= "third"
+const viewInfo = viewList.find((v) => v.name === view)
+if (!viewInfo) {
+  console.error(red(`Неизвестный вид «${view}». Доступны: ${viewList.map((v) => v.name).join(", ")}`))
+  process.exit(1)
+}
 sdk ||= "none"
 const sdkInfo = sdkList.find((s) => s.name === sdk)
 if (!sdkInfo) {
@@ -108,6 +134,21 @@ const pkgPath = join(root, "package.json")
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
 pkg.name = toPackageName(basename(root))
 
+// The view goes first: it replaces the game itself; an SDK only touches src/platform
+if (view !== "third") {
+  const dir = join(VIEWS, view)
+  for (const file of viewInfo.remove ?? []) rmSync(join(root, file), { recursive: true, force: true })
+  if (existsSync(join(dir, "files"))) cpSync(join(dir, "files"), root, { recursive: true })
+  for (const file of viewInfo.append ?? []) {
+    appendFileSync(join(root, file), readFileSync(join(dir, "append", file), "utf8"))
+  }
+  for (const field of ["scripts", "dependencies", "devDependencies"]) {
+    if (viewInfo.package?.[field]) {
+      pkg[field] = Object.fromEntries(Object.entries({ ...pkg[field], ...viewInfo.package[field] }).sort())
+    }
+  }
+}
+
 if (sdk !== "none") {
   const dir = join(SDKS, sdk)
   // Files replace or extend the template (e.g. src/platform/index.ts → the SDK implementation)
@@ -124,6 +165,7 @@ if (sdk !== "none") {
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n")
 
 console.log(`${green("✔")} Проект создан: ${bold(root)}`)
+console.log(`${green("✔")} Вид: ${viewInfo.title}`)
 console.log(`${green("✔")} SDK: ${sdkInfo.title}`)
 
 const agent = (process.env.npm_config_user_agent ?? "npm").split("/")[0]

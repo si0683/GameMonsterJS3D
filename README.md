@@ -34,6 +34,15 @@ Plus a playable level (rolling ball, jump, ramp, boxes to knock over, coins, tim
 - **Saves:** the record and the settings in one record, old saves keep loading; sound and music volume in the menu.
 - **RECIPES.md:** step by step — a new object, model (with compression), sound, screen, language; accessibility, performance (in Russian).
 
+## First-person view
+
+```bash
+npm create gamemonsterjs3d@latest my-game -- --view=first   # first-person horror
+npm create gamemonsterjs3d@latest my-game -- --view=third   # a ball, camera behind it (default)
+```
+
+`--view=first` is a starter for an Outlast-like horror game: a dark maze drawn as text in `src/config.ts`, pointer-lock mouse look + WASD + Shift to run (on phones the left half of the screen is a joystick, the right half looks around), a flashlight, fog and post-processing ([@react-three/postprocessing](https://github.com/pmndrs/react-three-postprocessing): grain, vignette, a colour split when it is near), and a creature that wanders the corridors and chases you when it sees you — path finding and line of sight are plain tested functions. A heartbeat speeds up when it is close. Works with any `--sdk`; `RECIPES.md` in the project shows how to use a rigged Mixamo model, positional sounds and a night-vision camera.
+
 ## Platform SDK
 
 The installer asks which portal to build for (or pass `--sdk`):

@@ -1,0 +1,24 @@
+{
+  "title": "от первого лица — хоррор: тёмный лабиринт, фонарик, существо, которое охотится",
+  "description": "First-person view: pointer-lock mouse look, WASD + Shift to run, touch joystick and look on phones, a flashlight, post-processing (grain, vignette, distortion) and an enemy that patrols a grid maze and chases you when it sees you",
+  "package": {
+    "dependencies": {
+      "@react-three/postprocessing": "^3.2.2",
+      "postprocessing": "^6.39.5"
+    }
+  },
+  "remove": [
+    "src/game/Coin.tsx",
+    "src/game/Level.tsx",
+    "src/game/Player.tsx",
+    "src/game/Tree.tsx",
+    "models/tree.glb",
+    "public/models/tree.glb"
+  ],
+  "append": [
+    "AGENTS.md",
+    "README.md",
+    "PROMT.md",
+    "RECIPES.md"
+  ]
+}

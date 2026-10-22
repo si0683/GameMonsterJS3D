@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0 — 2026-10-22
+
+- `--view=third|first` in the installer (or an interactive question): `third` is the ball demo as before, `first` creates a first-person horror starter. Views live in `views/<name>/` (`view.json` with dependencies, files to remove and docs to extend, `files/`, `append/`) and are applied before the SDK.
+- `--view=first`: a dark maze drawn as text (`MAZE` in `src/config.ts`), a Rapier capsule player with pointer-lock mouse look, WASD and Shift to run, head bob; touch joystick and look on phones; a flashlight on the camera; fog and `@react-three/postprocessing` (grain, vignette, colour split growing with danger); keys, an exit, a creature that wanders and chases on the grid (`findPath`, `canSee` in `src/rules.ts`, tested along with the level itself); a heartbeat and a caught sting made with Web Audio; recipes for Mixamo models, positional sound, night vision and nav meshes.
+
 ## 1.4.0 — 2026-10-22
 
 - In-game purchases in the `Platform` interface: `features` (ads / purchases / leaderboard), `getProducts`, `purchase`, `getPurchases`, `consumePurchase`; `guard()` covers them (a payment window that never answers ends as a failed purchase, broken catalogs are filtered).

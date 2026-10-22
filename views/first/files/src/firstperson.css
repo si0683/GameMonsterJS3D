@@ -1,0 +1,90 @@
+/* First-person view: crosshair, mouse hint, the touch joystick and a red tint when caught */
+
+.crosshair {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+.lock-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  font:
+    600 14px system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+
+.hud-exit {
+  color: #3cff7a;
+  font-style: normal;
+}
+
+/* touch: the whole screen catches fingers, only on devices without a precise pointer */
+.touch-area {
+  display: none;
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+}
+
+@media (pointer: coarse) {
+  .touch-area {
+    display: block;
+  }
+  .lock-hint {
+    display: none;
+  }
+}
+
+.stick {
+  position: fixed;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.overlay-caught {
+  background: rgba(70, 0, 0, 0.6);
+}
+
+/* menus of a horror game: no bright gradients */
+.overlay {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.play {
+  background: #d8d3c5;
+  color: #111;
+}
+
+.play:hover {
+  background: #f0ece2;
+}

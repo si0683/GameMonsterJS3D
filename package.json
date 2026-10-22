@@ -1,8 +1,8 @@
 {
   "name": "create-gamemonsterjs3d",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "3D browser game starter in one command: Vite + Three.js + React Three Fiber + Drei + Rapier physics + Howler.js + zustand + TypeScript, with a playable level, glTF loading and GitHub Pages deploy.",
-  "keywords": ["create", "starter", "template", "threejs", "react-three-fiber", "r3f", "drei", "rapier", "vite", "game", "3d", "webgl", "yandex-games", "vk", "crazygames", "poki"],
+  "keywords": ["create", "starter", "template", "threejs", "react-three-fiber", "r3f", "drei", "rapier", "vite", "game", "3d", "webgl", "yandex-games", "vk", "crazygames", "poki", "first-person", "fps", "horror"],
   "homepage": "https://si0683.github.io/GameMonsterJS3D/",
   "repository": { "type": "git", "url": "git+https://github.com/si0683/GameMonsterJS3D.git" },
   "bugs": { "url": "https://github.com/si0683/GameMonsterJS3D/issues" },
@@ -10,6 +10,6 @@
   "author": "si0683",
   "type": "module",
   "bin": { "create-gamemonsterjs3d": "bin/create.mjs" },
-  "files": ["bin", "template", "sdks", "!template/node_modules", "!template/dist", "!template/package-lock.json", "!template/test-results", "!template/playwright-report"],
+  "files": ["bin", "template", "sdks", "views", "!template/node_modules", "!template/dist", "!template/package-lock.json", "!template/test-results", "!template/playwright-report"],
   "engines": { "node": ">=20.19.0" }
 }
