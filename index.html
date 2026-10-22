@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GameMonsterJS3D — стек для 3D-игры одной командой</title>
   <meta name="description" content="npm create gamemonsterjs3d — 3D-игра на Vite, Three.js, React Three Fiber, Drei, Rapier, Howler.js и zustand.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237c3aed'/><stop offset='.55' stop-color='%23ec4899'/><stop offset='1' stop-color='%23f59e0b'/></linearGradient></defs><rect width='32' height='32' rx='8' fill='url(%23g)'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23151918'/><ellipse cx='16' cy='16' rx='9' ry='13' fill='%23b5b9a5'/><path d='M16 3.5l-1.4 4 2 3.2-2 4 1.6 3.4-1.7 4.2 1.5 4' stroke='%238fd35a' stroke-width='2' fill='none'/></svg>">
   <script>
     // Theme before the first paint: saved choice, otherwise the system setting
     (function () {
@@ -16,18 +16,20 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&family=Rubik+Wet+Paint&display=swap" rel="stylesheet">
   <style>
+    /* Palette of the hallway: charcoal walls, bone, mould and the glowing crack */
     :root {
-      --c1: #8b5cf6; --c2: #ec4899; --c3: #f59e0b;
-      --bg: #faf8ff; --surface: #ffffff; --text: #1b1530; --muted: #5f5878;
-      --line: rgba(27, 21, 48, 0.1); --term: #17122a;
-      --grad: linear-gradient(90deg, var(--c1), var(--c2), var(--c3));
+      --c1: #4f7a2a; --glow: #5f9a2e; --moss: #6f8a4c; --bone: #b5b9a5;
+      --bg: #0f0f0f; --surface: #dcdfd2; --text: #171b19; --muted: #4c574c;
+      --line: rgba(23, 27, 25, 0.16); --term: #171b19; --term-text: #dfe3d6;
+      --grad: linear-gradient(90deg, var(--glow), var(--moss));
       color-scheme: light;
     }
     :root[data-theme="dark"] {
-      --bg: #08060f; --surface: #151027; --text: #f3effd; --muted: #a69fc2;
-      --line: rgba(243, 239, 253, 0.1); --term: #0d0a18;
+      --c1: #8fd35a; --glow: #8fd35a; --moss: #7f975c; --bone: #b5b9a5;
+      --bg: #0f0f0f; --surface: #151918; --text: #dfe3d6; --muted: #8e998b;
+      --line: rgba(181, 185, 165, 0.14); --term: #0a0c0b; --term-text: #dfe3d6;
       color-scheme: dark;
     }
     *, *::before, *::after { box-sizing: border-box; }
@@ -77,6 +79,46 @@
     @media (max-width: 1099px) {
       main { background: color-mix(in srgb, var(--surface) 72%, transparent); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
     }
+    /* ---------- the panel in the style of the hallway ---------- */
+    main {
+      border-color: color-mix(in srgb, var(--glow) 22%, transparent);
+      background-image: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--moss) 16%, transparent), transparent 42%),
+        radial-gradient(circle at 0 100%, color-mix(in srgb, var(--moss) 10%, transparent), transparent 38%);
+      box-shadow: 0 0 0 1px #000, 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 48px color-mix(in srgb, var(--glow) 8%, transparent);
+    }
+    /* black ooze running down from the top edge, like on the walls */
+    main::before {
+      content: ""; position: absolute; left: 18px; right: 18px; top: -1px; height: 30px; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 30' preserveAspectRatio='none'%3E%3Cpath fill='%230a0b0b' d='M0 0h600v4c-8 0-9 6-11 12s-6 6-7 0-2-10-10-10-9 4-12 3-4-3-14-3c-6 0-7 18-10 18s-4-16-12-16H380c-6 0-7 9-9 9s-3-9-12-9H260c-5 0-6 22-9 22s-4-22-12-22H140c-7 0-8 12-11 12s-4-12-12-12H60c-5 0-6 7-8 7s-3-7-10-7H0z'/%3E%3C/svg%3E") top / 100% 100% no-repeat;
+    }
+    .logo { color: var(--text); }
+    /* the monster's cracked head */
+    .logo b {
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cellipse cx='11' cy='11' rx='7' ry='10' fill='%23b5b9a5' stroke='%2318201a' stroke-width='1.2'/%3E%3Cpath d='M11 1.5l-1 3 1.5 2.5-1.6 3 1.2 2.6-1.3 3.2 1.1 3' stroke='%2318201a' stroke-width='2.2' fill='none'/%3E%3Cpath d='M11 1.5l-1 3 1.5 2.5-1.6 3 1.2 2.6-1.3 3.2 1.1 3' stroke='%238fd35a' stroke-width='0.8' fill='none'/%3E%3C/svg%3E") center / contain no-repeat;
+      border-radius: 0; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--glow) 55%, transparent));
+    }
+    .grad {
+      font: 400 1.12em/1 'Rubik Wet Paint', Inter, sans-serif; letter-spacing: 0.01em;
+      background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--glow);
+      text-shadow: 0 0 14px color-mix(in srgb, var(--glow) 45%, transparent);
+    }
+    h2 { color: var(--moss); letter-spacing: 0.12em; }
+    a { color: var(--glow); }
+    li::before {
+      background: transparent; color: var(--glow); border: 1px solid color-mix(in srgb, var(--glow) 60%, transparent);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--glow) 30%, transparent), inset 0 0 6px color-mix(in srgb, var(--glow) 20%, transparent);
+    }
+    .cmd { background: var(--term); color: var(--term-text); border-left: 2px solid var(--glow); border-radius: 6px; }
+    .cmd code::before { content: "› "; color: var(--glow); }
+    .cmd button { background: var(--bone); color: #151918; transition: background 0.15s, box-shadow 0.15s; }
+    .cmd button:hover { background: #8fd35a; box-shadow: 0 0 12px rgba(143, 211, 90, 0.5); }
+    .btn { background: color-mix(in srgb, var(--term) 55%, transparent); color: var(--text); border-color: var(--line); }
+    :root:not([data-theme="dark"]) .btn { background: rgba(255, 255, 255, 0.4); }
+    td { border-bottom-color: var(--line); }
+    td:first-child a { text-decoration-color: color-mix(in srgb, var(--glow) 55%, transparent); }
+    td:first-child a:hover { color: var(--glow); }
+    footer a { color: var(--glow); }
+
     /* wide screens: the panel moves left, the monster gets the right side */
     @media (min-width: 1100px) {
       body { justify-items: start; }
