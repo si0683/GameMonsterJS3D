@@ -334,6 +334,16 @@ async function start() {
   // the flashlight follows the cursor; without one (phones) or when it rests, it wanders by itself
   const pointer = { x: 0, y: 0, px: innerWidth / 2, py: innerHeight / 2, movedAt: -1e9 }
   const beam = { x: innerWidth * 0.7, y: innerHeight * 0.45 }
+  const search = { x: beam.x, y: beam.y, until: 0 }
+  const probe = new THREE.Vector3()
+  /** The monster's head and body on screen (CSS px) — where the searching beam must not go */
+  function monsterPoints() {
+    if (!monster.visible || current === "empty" || current === "scare") return []
+    return [0.85, 0.55, 0.2].map((k) => {
+      probe.set(monster.position.x, monster.position.y + MONSTER.height * k, monster.position.z).project(camera)
+      return { x: ((probe.x + 1) / 2) * innerWidth, y: ((1 - probe.y) / 2) * innerHeight }
+    })
+  }
   addEventListener("pointermove", (e) => {
     pointer.x = (e.clientX / innerWidth - focusX) * 2
     pointer.y = (e.clientY / innerHeight - 0.5) * 2
@@ -479,12 +489,30 @@ async function start() {
     const lampOn = lampFlash && ((t > lampFlash[0] && t < lampFlash[1]) || (t > lampFlash[2] && t < lampFlash[3]))
     ambient.value = current === "scare" ? (lit > 0 ? 0.9 : 0) : lampOn ? 0.55 : 0.025
 
-    // where the beam points: the cursor, with a lag and a shaking hand; or a slow search
+    // where the beam points: the cursor, with a lag and a shaking hand. Left alone, the beam
+    // searches the hallway in jerks — always somewhere the monster is not, so it stays in the dark
     const idle = performance.now() - pointer.movedAt > 4000
-    const goalX = idle ? innerWidth * focusX + Math.sin(t * 0.23) * innerWidth * 0.16 + Math.sin(t * 0.61) * 40 : pointer.px
-    const goalY = idle ? innerHeight * (0.5 + 0.18 * Math.sin(t * 0.31 + 1.3)) : pointer.py
-    beam.x += (goalX - beam.x) * Math.min(1, dt * (idle ? 1.2 : 6))
-    beam.y += (goalY - beam.y) * Math.min(1, dt * (idle ? 1.2 : 6))
+    if (idle) {
+      const radius = Math.min(innerWidth, innerHeight) * 0.3
+      const points = monsterPoints()
+      const gap = (x, y) => Math.min(Infinity, ...points.map((m) => Math.hypot(x - m.x, y - m.y)))
+      if (t > search.until || gap(search.x, search.y) < radius * 1.3) {
+        // a few random spots; the one farthest from the monster wins
+        let best = null
+        for (let i = 0; i < 16; i++) {
+          const x = innerWidth * (focusX + between(-0.3, 0.3))
+          const y = innerHeight * between(0.2, 0.85)
+          if (!best || gap(x, y) > best.gap) best = { x, y, gap: gap(x, y) }
+        }
+        search.x = best.x
+        search.y = best.y
+        search.until = t + between(1.2, 3.2)
+      }
+    }
+    const goalX = idle ? search.x : pointer.px
+    const goalY = idle ? search.y : pointer.py
+    beam.x += (goalX - beam.x) * Math.min(1, dt * (idle ? 3 : 6))
+    beam.y += (goalY - beam.y) * Math.min(1, dt * (idle ? 3 : 6))
     const ratio = renderer.getPixelRatio()
     const shake = 3 * Math.sin(t * 17.0) + 2 * Math.sin(t * 29.0)
     flash.value.set(

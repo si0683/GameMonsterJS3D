@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GameMonsterJS3D — стек для 3D-игры одной командой</title>
   <meta name="description" content="npm create gamemonsterjs3d — 3D-игра на Vite, Three.js, React Three Fiber, Drei, Rapier, Howler.js и zustand.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23151918'/><ellipse cx='16' cy='16' rx='9' ry='13' fill='%23b5b9a5'/><path d='M16 3.5l-1.4 4 2 3.2-2 4 1.6 3.4-1.7 4.2 1.5 4' stroke='%238fd35a' stroke-width='2' fill='none'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23151918'/><ellipse cx='16' cy='16' rx='9' ry='13' fill='%23b5b9a5'/><path d='M16 3.5l-1.4 4 2 3.2-2 4 1.6 3.4-1.7 4.2 1.5 4' stroke='%23151918' stroke-width='2.2' fill='none'/></svg>">
   <script>
     // Theme before the first paint: saved choice, otherwise the system setting
     (function () {
@@ -18,18 +18,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&family=Rubik+Wet+Paint&display=swap" rel="stylesheet">
   <style>
-    /* Palette of the hallway: charcoal walls, bone, mould and the glowing crack */
+    /* Dark and colourless: soot, ash and bone — the only colour on the page is the monster's crack */
     :root {
-      --c1: #4f7a2a; --glow: #5f9a2e; --moss: #6f8a4c; --bone: #b5b9a5;
-      --bg: #0f0f0f; --surface: #dcdfd2; --text: #171b19; --muted: #4c574c;
-      --line: rgba(23, 27, 25, 0.16); --term: #171b19; --term-text: #dfe3d6;
-      --grad: linear-gradient(90deg, var(--glow), var(--moss));
+      --c1: #2b2925; --glow: #2b2925; --moss: #6b675e; --bone: #c9c4b6;
+      --bg: #0a0a0a; --surface: #d6d2c7; --text: #141414; --muted: #55524b;
+      --line: rgba(20, 20, 20, 0.16); --term: #141414; --term-text: #e4e0d6;
+      --grad: none;
       color-scheme: light;
     }
     :root[data-theme="dark"] {
-      --c1: #8fd35a; --glow: #8fd35a; --moss: #7f975c; --bone: #b5b9a5;
-      --bg: #0f0f0f; --surface: #151918; --text: #dfe3d6; --muted: #8e998b;
-      --line: rgba(181, 185, 165, 0.14); --term: #0a0c0b; --term-text: #dfe3d6;
+      --c1: #d8d3c5; --glow: #d8d3c5; --moss: #6f6c65; --bone: #c9c4b6;
+      --bg: #0a0a0a; --surface: #0c0c0c; --text: #e4e0d6; --muted: #85827a;
+      --line: rgba(216, 211, 197, 0.09); --term: #050505; --term-text: #e4e0d6;
       color-scheme: dark;
     }
     *, *::before, *::after { box-sizing: border-box; }
@@ -81,10 +81,9 @@
     }
     /* ---------- the panel in the style of the hallway ---------- */
     main {
-      border-color: color-mix(in srgb, var(--glow) 22%, transparent);
-      background-image: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--moss) 16%, transparent), transparent 42%),
-        radial-gradient(circle at 0 100%, color-mix(in srgb, var(--moss) 10%, transparent), transparent 38%);
-      box-shadow: 0 0 0 1px #000, 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 48px color-mix(in srgb, var(--glow) 8%, transparent);
+      border-color: var(--line);
+      background-image: radial-gradient(circle at 100% 0, rgba(255, 255, 255, 0.03), transparent 45%);
+      box-shadow: 0 0 0 1px #000, 0 24px 80px rgba(0, 0, 0, 0.8);
     }
     /* black ooze running down from the top edge, like on the walls */
     main::before {
@@ -94,8 +93,8 @@
     .logo { color: var(--text); }
     /* the monster's cracked head */
     .logo b {
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cellipse cx='11' cy='11' rx='7' ry='10' fill='%23b5b9a5' stroke='%2318201a' stroke-width='1.2'/%3E%3Cpath d='M11 1.5l-1 3 1.5 2.5-1.6 3 1.2 2.6-1.3 3.2 1.1 3' stroke='%2318201a' stroke-width='2.2' fill='none'/%3E%3Cpath d='M11 1.5l-1 3 1.5 2.5-1.6 3 1.2 2.6-1.3 3.2 1.1 3' stroke='%238fd35a' stroke-width='0.8' fill='none'/%3E%3C/svg%3E") center / contain no-repeat;
-      border-radius: 0; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--glow) 55%, transparent));
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cellipse cx='11' cy='11' rx='7' ry='10' fill='%23b5b9a5' stroke='%2318201a' stroke-width='1.2'/%3E%3Cpath d='M11 1.5l-1 3 1.5 2.5-1.6 3 1.2 2.6-1.3 3.2 1.1 3' stroke='%2318201a' stroke-width='2.2' fill='none'/%3E%3C/svg%3E") center / contain no-repeat;
+      border-radius: 0;
     }
     .grad {
       font: 400 1.12em/1 'Rubik Wet Paint', Inter, sans-serif; letter-spacing: 0.01em;
@@ -103,19 +102,18 @@
       text-shadow: 0 0 14px color-mix(in srgb, var(--glow) 45%, transparent);
     }
     h2 { color: var(--moss); letter-spacing: 0.12em; }
-    a { color: var(--glow); }
+    a { color: var(--glow); text-decoration-color: var(--moss); }
     li::before {
-      background: transparent; color: var(--glow); border: 1px solid color-mix(in srgb, var(--glow) 60%, transparent);
-      box-shadow: 0 0 10px color-mix(in srgb, var(--glow) 30%, transparent), inset 0 0 6px color-mix(in srgb, var(--glow) 20%, transparent);
+      background: transparent; color: var(--muted); border: 1px solid var(--line);
     }
-    .cmd { background: var(--term); color: var(--term-text); border-left: 2px solid var(--glow); border-radius: 6px; }
-    .cmd code::before { content: "› "; color: var(--glow); }
+    .cmd { background: var(--term); color: var(--term-text); border: 1px solid var(--line); border-radius: 6px; }
+    .cmd code::before { content: "› "; color: var(--muted); }
     .cmd button { background: var(--bone); color: #151918; transition: background 0.15s, box-shadow 0.15s; }
-    .cmd button:hover { background: #8fd35a; box-shadow: 0 0 12px rgba(143, 211, 90, 0.5); }
+    .cmd button:hover { background: #ece8de; }
     .btn { background: color-mix(in srgb, var(--term) 55%, transparent); color: var(--text); border-color: var(--line); }
     :root:not([data-theme="dark"]) .btn { background: rgba(255, 255, 255, 0.4); }
     td { border-bottom-color: var(--line); }
-    td:first-child a { text-decoration-color: color-mix(in srgb, var(--glow) 55%, transparent); }
+    td:first-child a { text-decoration-color: var(--moss); }
     td:first-child a:hover { color: var(--glow); }
     footer a { color: var(--glow); }
 
