@@ -440,9 +440,8 @@ async function start() {
     if (name === "scare") shown = 0
     else if (name !== "empty") shown++
     appearances[name].enter?.()
-    // it has moved in the dark: you hear it breathe — or it is right in front of you
+    // it moves without a sound; the only sound it makes is the scream right in front of you
     if (name === "scare") sound.scare()
-    else if (name !== "empty") sound.breath()
   }
 
   // a blackout: short flickers, then darkness long enough to move it
