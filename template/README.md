@@ -66,3 +66,9 @@ return <Clone object={scene} />
 - React Three Rapier: https://github.com/pmndrs/react-three-rapier
 - Three.js: https://threejs.org/docs
 - Howler.js: https://howlerjs.com
+
+## Через ИИ
+
+Заполните `PROMT.md` (техническое задание: жанр, механики, уровни, графика) и напишите ИИ-ассистенту в этой папке:
+
+> Прочитай PROMT.md и AGENTS.md и сделай игру по разделу «Промт». Начни с плана и вопросов.

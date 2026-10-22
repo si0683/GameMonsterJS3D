@@ -2,6 +2,8 @@
 
 3D browser game on **Vite + React 19 + Three.js + React Three Fiber 9 + Drei 10 + React Three Rapier 2 + Howler.js + zustand + TypeScript**. Created with `npm create gamemonsterjs3d`.
 
+If `PROMT.md` is filled in, it is the user's game design document: follow its «Промт» section (plan and questions first, then stages), while the rules below stay in force. An unfilled template (only `«…»` placeholders) is not a task.
+
 ## Structure
 
 - `src/App.tsx` — `<KeyboardControls>` (key map) → `<Canvas>` (sky, lights) → `<Suspense>` → `<Physics>` → `<Level key={run} />`; DOM overlays `Hud`, `TouchControls`, `Menu` sit outside the Canvas.
