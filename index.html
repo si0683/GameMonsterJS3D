@@ -32,37 +32,35 @@
     }
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; }
-    body { margin: 0; display: grid; place-items: center; font: 400 14px/1.5 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); }
+    body { margin: 0; display: grid; place-items: center; font: 400 14px/1.4 Inter, system-ui, sans-serif; color: var(--text); background: var(--bg); }
     a { color: var(--c1); }
-    main { width: min(980px, 100% - 32px); padding: 20px 0; }
-    .top { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    main { width: min(680px, 100% - 32px); padding: 10px 0; }
+    .top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
-    .logo b { width: 24px; height: 24px; border-radius: 7px; background: var(--grad); }
+    .logo b { width: 22px; height: 22px; border-radius: 6px; background: var(--grad); }
     .top .end { margin-left: auto; display: flex; gap: 6px; }
-    .btn { display: grid; place-items: center; height: 30px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: 600 13px/1 Inter, sans-serif; text-decoration: none; cursor: pointer; }
-    h1 { font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 6px; }
+    .btn { display: grid; place-items: center; height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: 600 12.5px/1 Inter, sans-serif; text-decoration: none; cursor: pointer; }
+    h1 { font-size: clamp(21px, 3.2vw, 26px); line-height: 1.2; font-weight: 700; letter-spacing: -0.025em; margin: 0 0 4px; }
     .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .lead { color: var(--muted); margin: 0 0 18px; }
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
-    h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px; }
-    ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; }
-    li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 4px 10px; min-width: 0; }
-    li::before { content: counter(s); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--grad); color: #fff; font-weight: 700; font-size: 13px; }
+    .lead { color: var(--muted); margin: 0 0 10px; }
+    h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; }
+    ol { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 6px; }
+    li { counter-increment: s; display: grid; grid-template-columns: 22px 1fr; gap: 3px 10px; align-items: center; min-width: 0; }
+    li::before { content: counter(s); grid-row: span 2; align-self: start; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--grad); color: #fff; font-weight: 700; font-size: 12px; }
+    li.one::before { grid-row: auto; }
     li b { font-weight: 600; }
-    .cmd { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 4px 4px 4px 12px; border-radius: 9px; background: var(--term); color: #f3effd; }
+    .cmd { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 3px 3px 3px 12px; border-radius: 8px; background: var(--term); color: #f3effd; }
     .cmd code { flex: 1; min-width: 0; font: 12.5px/1.5 'JetBrains Mono', monospace; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
-    .cmd button { flex: none; padding: 6px 10px; border: 0; border-radius: 6px; background: #fff; color: #17122a; font: 600 12px/1 Inter, sans-serif; cursor: pointer; }
-    .note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
-    code { font: 12.5px 'JetBrains Mono', monospace; }
+    .cmd button { flex: none; padding: 5px 9px; border: 0; border-radius: 6px; background: #fff; color: #17122a; font: 600 12px/1 Inter, sans-serif; cursor: pointer; }
+    .note { color: var(--muted); font-size: 12.5px; margin: 6px 0 10px; }
+    code { font: 12px 'JetBrains Mono', monospace; }
     table { width: 100%; border-collapse: collapse; }
-    td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-    td:first-child { width: 128px; font-weight: 600; padding-right: 8px; }
+    td { padding: 3px 0; font-size: 13.5px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td:first-child { width: 150px; font-weight: 600; padding-right: 8px; }
+    td:last-child { color: var(--muted); }
     td:first-child a { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--c1) 45%, transparent); text-underline-offset: 3px; transition: color 0.2s, text-decoration-color 0.2s; }
     td:first-child a:hover { color: var(--c1); text-decoration-color: currentColor; }
-    td:last-child { color: var(--muted); }
-    table + h2 { margin-top: 16px; }
-    footer { margin-top: 20px; color: var(--muted); font-size: 12.5px; }
-    @media (max-width: 760px) { .cols { grid-template-columns: 1fr; gap: 20px; } }
+    footer { margin-top: 8px; color: var(--muted); font-size: 12px; }
   </style>
 </head>
 <body>
@@ -78,35 +76,25 @@
     <h1>Стек для 3D-игры <span class="grad">одной командой</span></h1>
     <p class="lead">Vite + Three.js + React Three Fiber + Drei + Rapier — команда создаёт папку с игрой и сама ставит все пакеты. Внутри готовый уровень с физикой.</p>
 
-    <div class="cols">
-      <div>
-        <h2>Как начать</h2>
-        <ol>
-          <li><b>Установите <a href="https://nodejs.org">Node.js</a> 20.19+</b><span class="note" style="margin:0">Проверить: <code>node -v</code></span></li>
-          <li><b>Создайте проект</b><div class="cmd"><code>npm create gamemonsterjs3d@latest my-game</code><button type="button" data-copy>Копировать</button></div></li>
-          <li><b>Запустите</b><div class="cmd"><code>cd my-game &amp;&amp; npm run dev</code><button type="button" data-copy>Копировать</button></div></li>
-        </ol>
-        <p class="note">Откроется на <code>http://localhost:5173</code>. Пока пакета нет в npm, вместо шага 2: <code>npx github:si0683/GameMonsterJS3D my-game</code></p>
-      </div>
-      <div>
-        <h2>Что установится</h2>
-        <table>
-        <tr><td><a href="https://github.com/mrdoob/three.js" target="_blank" rel="noopener">Three.js</a></td><td>3D: сцены, модели glTF, свет, материалы</td></tr>
-        <tr><td><a href="https://github.com/pmndrs/react-three-fiber" target="_blank" rel="noopener">React Three Fiber</a></td><td>React-слой над Three.js</td></tr>
-        <tr><td><a href="https://github.com/pmndrs/drei" target="_blank" rel="noopener">Drei</a></td><td>модели, управление, камеры, окружения, эффекты</td></tr>
-        <tr><td><a href="https://github.com/pmndrs/react-three-rapier" target="_blank" rel="noopener">Rapier</a></td><td>3D-физика и коллизии</td></tr>
-        <tr><td><a href="https://github.com/goldfire/howler.js" target="_blank" rel="noopener">Howler.js</a></td><td>звук и музыка</td></tr>
-        <tr><td><a href="https://github.com/pmndrs/zustand" target="_blank" rel="noopener">zustand</a></td><td>состояние игры</td></tr>
-        <tr><td><a href="https://github.com/vitejs/vite" target="_blank" rel="noopener">Vite</a>, <a href="https://github.com/microsoft/TypeScript" target="_blank" rel="noopener">TypeScript</a></td><td>сборка и типы</td></tr>
-        <tr><td><a href="https://yandex.ru/dev/games/doc/ru/sdk/sdk-about" target="_blank" rel="noopener">SDK</a></td><td>без SDK или Яндекс Игры (<code>--sdk=yandex</code>)</td></tr>
-        </table>
-        <h2>Команды</h2>
-        <table>
-        <tr><td><code>npm run dev</code></td><td>разработка</td></tr>
-        <tr><td><code>npm run build</code></td><td>готовая игра в <code>dist/</code></td></tr>
-        </table>
-      </div>
-    </div>
+    <h2>Как начать</h2>
+    <ol>
+      <li class="one"><span><b>Установите <a href="https://nodejs.org">Node.js</a> 20.19+</b> <span class="note">· проверить: <code>node -v</code></span></span></li>
+      <li><b>Создайте проект</b><div class="cmd"><code>npm create gamemonsterjs3d@latest my-game</code><button type="button" data-copy>Копировать</button></div></li>
+      <li><b>Запустите</b><div class="cmd"><code>cd my-game &amp;&amp; npm run dev</code><button type="button" data-copy>Копировать</button></div></li>
+    </ol>
+    <p class="note">Откроется на <code>http://localhost:5173</code>, готовая сборка — <code>npm run build</code> → <code>dist/</code>. Пока пакета нет в npm, вместо шага 2: <code>npx github:si0683/GameMonsterJS3D my-game</code></p>
+
+    <h2>Что установится</h2>
+    <table>
+      <tr><td><a href="https://github.com/mrdoob/three.js" target="_blank" rel="noopener">Three.js</a></td><td>3D: сцены, модели glTF, свет, материалы</td></tr>
+      <tr><td><a href="https://github.com/pmndrs/react-three-fiber" target="_blank" rel="noopener">React Three Fiber</a></td><td>React-слой над Three.js</td></tr>
+      <tr><td><a href="https://github.com/pmndrs/drei" target="_blank" rel="noopener">Drei</a></td><td>модели, управление, камеры, окружения, эффекты</td></tr>
+      <tr><td><a href="https://github.com/pmndrs/react-three-rapier" target="_blank" rel="noopener">Rapier</a></td><td>3D-физика и коллизии</td></tr>
+      <tr><td><a href="https://github.com/goldfire/howler.js" target="_blank" rel="noopener">Howler.js</a></td><td>звук и музыка</td></tr>
+      <tr><td><a href="https://github.com/pmndrs/zustand" target="_blank" rel="noopener">zustand</a></td><td>состояние игры</td></tr>
+      <tr><td><a href="https://github.com/vitejs/vite" target="_blank" rel="noopener">Vite</a>, <a href="https://github.com/microsoft/TypeScript" target="_blank" rel="noopener">TypeScript</a></td><td>сборка и типы</td></tr>
+      <tr><td><a href="https://yandex.ru/dev/games/doc/ru/sdk/sdk-about" target="_blank" rel="noopener">SDK</a></td><td>без SDK или Яндекс Игры (<code>--sdk=yandex</code>)</td></tr>
+    </table>
 
     <footer>MIT · <a href="https://github.com/si0683/GameMonsterJS3D#readme">README</a> · 2D: <a href="https://si0683.github.io/GameMonsterJS2D/">GameMonsterJS2D</a></footer>
   </main>
