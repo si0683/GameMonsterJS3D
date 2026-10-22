@@ -10,15 +10,24 @@ npm run dev      # игра на http://localhost:5173, правки видны 
 npm run build    # готовая игра в папке dist/
 npm run preview  # посмотреть собранную dist/
 npm run zip      # game.zip (index.html в корне) для игровых порталов
+npm run check     # перед коммитом: линтер, типы, тесты, сборка
+npm test          # модульные тесты (Vitest): правила, сохранения, платформа
+npm run test:e2e  # игра в браузере (Playwright); первый раз: npx playwright install chromium
+npm run lint      # ESLint; npm run format — Prettier
 ```
+
+Как добавить объект, модель, звук, экран, язык — пошагово в [RECIPES.md](RECIPES.md).
 
 ## Где что лежит
 
 ```
 src/App.tsx            сцена: небо, свет, физика, уровень + меню и счёт поверх
 src/config.ts          баланс и расстановка монет и деревьев
-src/store.ts           состояние игры (zustand): меню / игра / победа, монеты, время
-src/audio.ts           звуки и музыка (Howler.js)
+src/store.ts           состояние игры (zustand): меню / игра / победа, монеты, время, громкость
+src/rules.ts           правила игры (тесты — rules.test.ts)
+src/save.ts            сохранение: рекорд и настройки громкости
+src/audio.ts           звуки и музыка (Howler.js) + громкость из меню
+src/i18n.ts            тексты на русском и английском
 src/game/
   Level.tsx            земля, рампа, ящики, деревья, монеты
   Player.tsx           шар на физике Rapier + камера за ним
@@ -27,6 +36,7 @@ src/game/
 src/ui/                меню, счёт, кнопки для телефона
 public/models/         3D-модели .glb
 public/sounds/         звуки (CREDITS.md — авторы)
+e2e/game.spec.ts       проверка игры в браузере (Playwright)
 ```
 
 ## Что за что отвечает

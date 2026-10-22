@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
@@ -10,4 +11,6 @@ export default defineConfig({
   server: { port: 5173 },
   // three.js + Rapier (WebAssembly inside) weigh ~3.5 MB, ~1.2 MB gzipped: fine for a 3D game
   build: { chunkSizeWarningLimit: 4000 },
+  // Unit tests (npm test): game rules, saves, platform — files next to the code, *.test.ts
+  test: { include: ["src/**/*.test.{ts,tsx}"] },
 })

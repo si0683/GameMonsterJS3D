@@ -1,8 +1,10 @@
 import { create } from "zustand"
 
-import { sounds } from "./audio"
+import { applyVolumes, sounds } from "./audio"
 import { COINS } from "./config"
 import { platform } from "./platform"
+import { isRecord, isWin } from "./rules"
+import { DEFAULT_SAVE, nextVolume, save, type Settings } from "./save"
 
 type Phase = "menu" | "playing" | "won"
 
@@ -15,6 +17,8 @@ interface GameState {
   finishedAt: number
   /** Best time in ms (0 — none yet), saved through the platform */
   best: number
+  /** Volume settings from the menu, saved with the record */
+  settings: Settings
   /** The platform paused the game: ad, hidden tab */
   paused: boolean
   pausedAt: number
@@ -25,6 +29,8 @@ interface GameState {
   pause: () => void
   resume: () => void
   setTouch: (key: keyof GameState["touch"], down: boolean) => void
+  /** Settings button: the next volume level of effects or music */
+  changeVolume: (key: keyof Settings) => void
 }
 
 export const useGame = create<GameState>((set, get) => ({
@@ -34,6 +40,7 @@ export const useGame = create<GameState>((set, get) => ({
   startedAt: 0,
   finishedAt: 0,
   best: 0,
+  settings: DEFAULT_SAVE.settings,
   paused: false,
   pausedAt: 0,
   touch: { forward: false, back: false, left: false, right: false, jump: false },
@@ -50,17 +57,17 @@ export const useGame = create<GameState>((set, get) => ({
     if (phase !== "playing" || collected.includes(id)) return
     sounds.coin.play()
     const next = [...collected, id]
-    if (next.length < COINS.length) return set({ collected: next })
+    if (!isWin(next.length, COINS.length)) return set({ collected: next })
 
     // All coins collected: win
     sounds.music.stop()
     sounds.win.play()
     const finishedAt = performance.now()
     const time = Math.round(finishedAt - startedAt)
-    const record = best === 0 || time < best
+    const record = isRecord(time, best)
     set({ collected: next, phase: "won", finishedAt, best: record ? time : best })
     platform.gameplayStop()
-    if (record) void platform.saveData({ best: time })
+    if (record) save.update({ best: time })
     void platform.submitScore(time) // leaderboard of type "time", in milliseconds
     // Interstitial ad at a logical pause (Yandex SDK; without an SDK it resolves at once)
     void platform.showFullscreenAd()
@@ -80,4 +87,11 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   setTouch: (key, down) => set((s) => ({ touch: { ...s.touch, [key]: down } })),
+
+  changeVolume: (key) => {
+    // Settings save after a second of quiet: clicking through the levels is one write
+    const { settings } = save.update({ settings: { [key]: nextVolume(get().settings[key]) } }, 1000)
+    applyVolumes(settings)
+    set({ settings })
+  },
 }))

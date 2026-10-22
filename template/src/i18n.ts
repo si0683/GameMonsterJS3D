@@ -2,7 +2,7 @@ import { platform } from "./platform"
 
 // Player-facing texts. The language comes from the platform (Yandex: ysdk.environment.i18n.lang,
 // otherwise the browser) — moderation on game portals requires it.
-const texts = {
+export const texts = {
   ru: {
     title: "Моя 3D-игра",
     goal: "Соберите все монеты",
@@ -14,6 +14,9 @@ const texts = {
     coins: "Монеты",
     seconds: "с",
     controls: "WASD или стрелки — катиться, пробел — прыжок",
+    sound: "Звук",
+    music: "Музыка",
+    off: "выкл",
   },
   en: {
     title: "My 3D Game",
@@ -26,10 +29,23 @@ const texts = {
     coins: "Coins",
     seconds: "s",
     controls: "WASD or arrows — roll, space — jump",
+    sound: "Sound",
+    music: "Music",
+    off: "off",
   },
 }
 
 // Russian for the CIS languages, English for everyone else
 const RU = ["ru", "be", "kk", "uk", "uz"]
 
-export const t = () => (RU.includes(platform.lang) ? texts.ru : texts.en)
+/** Which text set a platform language gets */
+export function pickLanguage(lang: string): keyof typeof texts {
+  return RU.includes(lang.slice(0, 2).toLowerCase()) ? "ru" : "en"
+}
+
+export const t = () => texts[pickLanguage(platform.lang)]
+
+/** "Звук: 75%" / "Звук: выкл" */
+export function volumeLabel(key: "sound" | "music", volume: number): string {
+  return `${t()[key]}: ${volume > 0 ? `${Math.round(volume * 100)}%` : t().off}`
+}

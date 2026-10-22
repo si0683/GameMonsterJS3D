@@ -80,13 +80,20 @@ export const platform: Platform = {
   async init() {
     await web.init()
     if (!(await loadScript()) || !window.YaGames) {
-      console.warn("[platform] Yandex SDK not found (/sdk.js) — running without it. Use `npm run yandex` to test with the SDK.")
+      console.warn(
+        "[platform] Yandex SDK not found (/sdk.js) — running without it. Use `npm run yandex` to test with the SDK.",
+      )
       return
     }
-    sdk = await window.YaGames.init()
-    // The platform pauses the game for ads, purchase windows and hidden tabs
-    sdk.on("game_api_pause", pause)
-    sdk.on("game_api_resume", resume)
+    try {
+      const instance = await window.YaGames.init()
+      // The platform pauses the game for ads, purchase windows and hidden tabs
+      instance.on("game_api_pause", pause)
+      instance.on("game_api_resume", resume)
+      sdk = instance
+    } catch (error) {
+      console.warn("[platform] Yandex SDK failed to start — running without it:", error)
+    }
   },
 
   ready() {
@@ -111,14 +118,21 @@ export const platform: Platform = {
     if (!sdk) return web.showFullscreenAd()
     const ads = sdk.adv
     return new Promise<void>((resolve) => {
+      // An error after the ad opened must still unpause the game
+      let opened = false
+      const finish = () => {
+        if (opened) resume()
+        opened = false
+        resolve()
+      }
       ads.showFullscreenAdv({
         callbacks: {
-          onOpen: pause,
-          onClose: () => {
-            resume()
-            resolve()
+          onOpen: () => {
+            opened = true
+            pause()
           },
-          onError: () => resolve(),
+          onClose: finish,
+          onError: finish,
         },
       })
     })
@@ -128,16 +142,23 @@ export const platform: Platform = {
     if (!sdk) return web.showRewardedAd()
     const ads = sdk.adv
     return new Promise<boolean>((resolve) => {
+      let opened = false
       let rewarded = false
+      const finish = (result: boolean) => {
+        if (opened) resume()
+        opened = false
+        resolve(result)
+      }
       ads.showRewardedVideo({
         callbacks: {
-          onOpen: pause,
-          onRewarded: () => (rewarded = true),
-          onClose: () => {
-            resume()
-            resolve(rewarded)
+          onOpen: () => {
+            opened = true
+            pause()
           },
-          onError: () => resolve(false),
+          onRewarded: () => (rewarded = true),
+          onClose: () => finish(rewarded),
+          // No reward on an error, even if the video was partly shown
+          onError: () => finish(false),
         },
       })
     })

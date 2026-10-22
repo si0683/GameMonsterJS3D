@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import { COINS } from "../config"
 import { t } from "../i18n"
+import { formatSeconds } from "../rules"
 import { useGame } from "../store"
 
 export function Hud() {
@@ -25,7 +26,7 @@ export function Hud() {
         {t().coins}: {collected} / {COINS.length}
       </span>
       <span>
-        {((now - startedAt) / 1000).toFixed(1)} {t().seconds}
+        {formatSeconds(now - startedAt)} {t().seconds}
       </span>
     </div>
   )

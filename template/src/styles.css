@@ -61,8 +61,39 @@ canvas {
   border-radius: 14px;
   background: linear-gradient(90deg, #8b5cf6, #ec4899, #f59e0b);
   color: #fff;
-  font: 700 22px system-ui, sans-serif;
+  font:
+    700 22px system-ui,
+    sans-serif;
   cursor: pointer;
+}
+
+.settings {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.settings button {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font:
+    600 15px system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.settings button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Keyboard focus is always visible */
+.panel button:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 3px;
 }
 
 .hud {
@@ -72,7 +103,9 @@ canvas {
   right: 20px;
   display: flex;
   justify-content: space-between;
-  font: 700 22px system-ui, sans-serif;
+  font:
+    700 22px system-ui,
+    sans-serif;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
@@ -106,10 +139,18 @@ canvas {
   touch-action: none;
 }
 
-.touch-forward { grid-area: 1 / 2; }
-.touch-left { grid-area: 2 / 1; }
-.touch-right { grid-area: 2 / 3; }
-.touch-back { grid-area: 3 / 2; }
+.touch-forward {
+  grid-area: 1 / 2;
+}
+.touch-left {
+  grid-area: 2 / 1;
+}
+.touch-right {
+  grid-area: 2 / 3;
+}
+.touch-back {
+  grid-area: 3 / 2;
+}
 
 .touch-jump {
   position: fixed;

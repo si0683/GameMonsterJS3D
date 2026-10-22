@@ -27,6 +27,13 @@ Options: `--no-install`, `--no-git`. Needs Node.js 20.19+.
 
 Plus a playable level (rolling ball, jump, ramp, boxes to knock over, coins, timer, win screen), a glTF model loaded with `useGLTF`, touch buttons for phones, `AGENTS.md` for AI assistants and a GitHub Pages workflow.
 
+## Quality built in
+
+- **Checks:** ESLint + Prettier, strict TypeScript, [Vitest](https://vitest.dev) unit tests (game rules, saves, platform) and a [Playwright](https://playwright.dev) browser check: the game loads without errors, the menu works, the level starts, the ball rolls. All at once: `npm run check`; GitHub Actions runs it before every deploy.
+- **Reliable platform layer:** portal SDK errors and hangs never break the game — calls have time limits, a failed ad gives no reward and never freezes the game.
+- **Saves:** the record and the settings in one record, old saves keep loading; sound and music volume in the menu.
+- **RECIPES.md:** step by step — a new object, model (with compression), sound, screen, language; accessibility, performance (in Russian).
+
 ## Platform SDK
 
 The installer asks which SDK to build for (or pass `--sdk`):

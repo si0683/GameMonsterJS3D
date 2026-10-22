@@ -28,7 +28,7 @@ const sdkList = [
     ...JSON.parse(readFileSync(join(SDKS, name, "sdk.json"), "utf8")),
   })),
 ]
-const SKIP = new Set(["node_modules", "dist", "package-lock.json"])
+const SKIP = new Set(["node_modules", "dist", "package-lock.json", "test-results", "playwright-report"])
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"))
 
 const color = (code) => (text) => (process.stdout.isTTY ? `\x1b[${code}m${text}\x1b[0m` : text)
@@ -139,8 +139,10 @@ ${bold("Дальше:")}
   cd ${cd.includes(" ") ? `"${cd}"` : cd}${installed ? "" : `\n  ${pm} install`}
   ${pm} run dev          ${dim(`# ${DEV_URL}`)}
 ${sdkScripts()}  ${pm} run zip          ${dim("# game.zip для публикации")}
+  ${pm} run check        ${dim("# линтер, типы, тесты, сборка — перед коммитом")}
 
 ${TIPS}
+Рецепты (объекты, модели, звук, экраны, язык): RECIPES.md
 `)
 
 function sdkScripts() {

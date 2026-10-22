@@ -26,7 +26,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci || npm install
-      - run: npm run build
+      # Linter, types, unit tests and the build: a broken game is never published
+      - run: npm run check
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist

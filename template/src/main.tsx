@@ -3,14 +3,18 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { App } from "./App"
+import { applyVolumes } from "./audio"
 import { platform } from "./platform"
+import { save } from "./save"
 import { useGame } from "./store"
 import "./styles.css"
 
 // The platform (SDK) first: it sets the language and may need to load its script
 await platform.init()
-const data = await platform.loadData()
-useGame.setState({ best: Number(data.best) || 0 })
+// Saved progress and settings (Yandex: player cloud data, otherwise localStorage)
+const { best, settings } = await save.load()
+applyVolumes(settings)
+useGame.setState({ best, settings })
 
 // Ads, purchase windows and hidden tabs: silence and freeze the game
 platform.onPause(() => {
@@ -28,5 +32,8 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 )
 
+// A settings change waits up to a second before saving: write it if the page is closed sooner
+addEventListener("pagehide", () => void save.flush())
+
 // In dev mode the game state is reachable from the browser console: useGame.getState()
-if (import.meta.env.DEV) Object.assign(window, { useGame, platform })
+if (import.meta.env.DEV) Object.assign(window, { useGame, platform, save })

@@ -7,3 +7,5 @@ dist/
 !.vscode/extensions.json
 npm-debug.log*
 game.zip
+playwright-report/
+test-results/
